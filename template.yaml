@@ -46,6 +46,9 @@ Parameters:
   SocketApiCertArn:
     Type: String
     Description: ACM Certificate Arn for SocketAPI
+  SocketApiName:
+    Type: String
+    Description: Socket API Name
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -233,7 +236,7 @@ Resources:
   SocketApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
-      Name: ${Stack}-${Environment}-SocketApi
+      Name: !Ref SocketApiName
       ProtocolType: WEBSOCKET
       RouteSelectionExpression: "$request.body.action"
 
