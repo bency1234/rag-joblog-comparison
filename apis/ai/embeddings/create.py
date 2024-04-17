@@ -10,15 +10,15 @@ from ai.llms.constants import (
 from common.envs import get_secret_value_from_secret_manager, logger
 from dotenv import load_dotenv
 from langchain.document_loaders.csv_loader import CSVLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import CharacterTextSplitter
 
 # Import local modules
 from langchain.vectorstores.pgvector import PGVector
 from langchain_community.document_loaders import (
-    PyMuPDFLoader,
+    PyPDFLoader,
     UnstructuredWordDocumentLoader,
+    UnstructuredMarkdownLoader,
 )
-
 # Load environment variables
 load_dotenv()
 
@@ -61,22 +61,29 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
 
     split_docs = []
     FORMAT = file_path.split(".")[-1]
-    split_docs = []
-    if FORMAT == "csv":
-        loader = CSVLoader(file_path=file_path, source_column=source_column)
-        split_docs = loader.load()
-    elif FORMAT == "pdf":
-        loader = PyMuPDFLoader(file_path)
-        docs = loader.load()
-        text_splitter = RecursiveCharacterTextSplitter(
+    if FORMAT == "md":
+        loader = UnstructuredMarkdownLoader(f"./{file_path}", mode="single")
+        docs = loader.load_and_split()
+        text_splitter = CharacterTextSplitter(
             chunk_size=CHUNK_SIZE_LIMIT, chunk_overlap=MAX_CHUNK_OVERLAP
         )
         split_docs = text_splitter.split_documents(docs)
+        
+    elif FORMAT == "pdf":
+        loader = PyPDFLoader(file_path)
+        docs = loader.load_and_split()
+        text_splitter = CharacterTextSplitter(
+            chunk_size=CHUNK_SIZE_LIMIT, chunk_overlap=MAX_CHUNK_OVERLAP
+        )
+        logger.info("text splitter", text_splitter)
+        split_docs = text_splitter.split_documents(docs)
+        print("split", split_docs)
     elif FORMAT in ["doc", "docx"]:
         loader = UnstructuredWordDocumentLoader(file_path, mode="single")
         docs = loader.load_and_split()
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=CHUNK_SIZE_LIMIT, chunk_overlap=MAX_CHUNK_OVERLAP
+        separator=","
+        text_splitter = CharacterTextSplitter(
+            separator=separator, chunk_size=CHUNK_SIZE_LIMIT, chunk_overlap=MAX_CHUNK_OVERLAP
         )
         split_docs = text_splitter.split_documents(docs)
     else:

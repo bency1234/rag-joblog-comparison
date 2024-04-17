@@ -47,7 +47,7 @@ def upload_to_s3(filename, file_path):
     return s3_url
 
 
-ALLOWED_EXTENSIONS = ["pdf", "csv"]
+ALLOWED_EXTENSIONS = ["pdf", "doc", "docx", "md"]
 
 
 def generate_bad_request_response(msg):

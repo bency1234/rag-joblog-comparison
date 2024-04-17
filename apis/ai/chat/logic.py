@@ -1,9 +1,9 @@
 import json
 import re
-
+import openai
 from ai.chat.utils import pairwise
 from ai.common.utils.cost import get_cost
-from ai.common.utils.debug import time_it
+from ai.common.utils.debug import debug_steps, time_it
 from ai.llms.constants import (
     SEARCH_KWARGS,
     SEARCH_TYPE,
@@ -11,9 +11,14 @@ from ai.llms.constants import (
     SYSTEM_MODEL,
     SYSTEM_OUTPUT_COST,
     TOKENS,
+    TURBO_16k,
+    TURBO_16k_COST,
+    TEMPERATURE,
+    MAX_RETRIES,
 )
-from ai.llms.openaillm import ChatOpenAILLMProvider
+from langchain.chat_models import ChatOpenAI
 from ai.prompts.system_prompt import PROMPT
+from ai.chat.token import get_tokens
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -21,49 +26,73 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.schema import AIMessage, HumanMessage
-
+from langchain.memory import ConversationBufferWindowMemory
 from .stream_handler import AWSStreamHandler
-
+from common.envs import logger
 
 class GenerateResponse:
     def __init__(self, row, vector_store):
         self.row = row
         self.vector_store = vector_store
 
-    def generate_raw_prompt(self, system_template, human_template, message_log):
-        return (
-            system_template
-            + "Human prompt"
-            + human_template
-            + "Message_log"
-            + json.dumps(message_log)
-        )
+    # def generate_raw_prompt(self, system_template, human_template, message_log):
+    #     return (
+    #         system_template
+    #         + "Human prompt"
+    #         + human_template
+    #         + "Message_log"
+    #         + json.dumps(message_log)
+    #     )
 
+    def get_prompt_token_and_cost(
+        self, model, cost, prompt, examples, response, source_documents
+    ):
+        message_log_string = json.dumps(examples, indent=2)
+        final_prompt = prompt + "Message_log" + message_log_string
+        tokens = get_tokens(
+            model, f"{prompt},{message_log_string},{response},{source_documents}"
+        )
+        total_cost = get_cost(tokens, cost)
+        return final_prompt, tokens, total_cost
+    
     @time_it
     def chat_completion(self, user_input, message_log, client_id, connection_id):
-        human_template = "{question}"
-
-        system_template = PROMPT
-
+        MODEL = TURBO_16k
+        system_template = (
+            PROMPT(user_input)
+            + """
+        Human: {question}
+        chat_history: {chat_history}
+        Bot: {summaries}
+        ----------------
+        """
+        )
+        logger.info("SYSTEM TEMPLATE", system_template)
         messages = [
             SystemMessagePromptTemplate.from_template(system_template),
         ]
-
+        raw_messages = []
+        window_memory = ConversationBufferWindowMemory(
+            memory_key="chat_history", k=2, output_key="answer", input_key="question"
+        )
         for human, ai in pairwise(message_log):
-            messages.append(HumanMessage(content=human))
-            messages.append(AIMessage(content=ai))
+            window_memory.chat_memory.add_user_message(human)
+            window_memory.chat_memory.add_ai_message(ai)
+            raw_messages.append(human)
+            raw_messages.append(ai)
+        messages.append(HumanMessagePromptTemplate.from_template("{question}"))
 
-        messages.append(HumanMessagePromptTemplate.from_template(human_template))
         prompt = ChatPromptTemplate.from_messages(messages)
         chain_type_kwargs = {"prompt": prompt}
-
-        llm = ChatOpenAILLMProvider(
-            model_name=SYSTEM_MODEL,
+        llm = ChatOpenAI(
+            model_name=MODEL,
+            temperature=TEMPERATURE,
+            max_retries=MAX_RETRIES,
             max_tokens=TOKENS,
+            openai_api_key=openai.api_key,
+            streaming=True,
         ).configure_model(
-            callbacks=[AWSStreamHandler(client_id, connection_id)], streaming=True
-        )
-
+             callbacks=[AWSStreamHandler(client_id, connection_id)], streaming=True)
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             llm=llm,
             chain_type="stuff",
@@ -72,29 +101,89 @@ class GenerateResponse:
             ),
             chain_type_kwargs=chain_type_kwargs,
             return_source_documents=True,
+            memory=window_memory,
         )
-
+        #debug_attribute("source documents", chain.source_documents)
         chain_response = chain(user_input)
-        response = chain_response["answer"]
+        logger.info("COMPLETE RESPONSE", chain_response)
+        print("COMPLETE RESPONSE-->", chain_response)
+        response = chain_response["answer"].strip()
         source_documents = chain_response["source_documents"]
-
-        raw_prompt = self.generate_raw_prompt(
-            system_template, human_template, json.dumps(message_log, indent=2)
-        )
-
-        total_cost = get_cost(
-            SYSTEM_MODEL,
-            SYSTEM_INPUT_COST,
-            SYSTEM_OUTPUT_COST,
+        logger.info("Source Documents", source_documents)
+        (
+            raw_prompt,
+            tokens,
+            total_cost,
+        ) = self.get_prompt_token_and_cost(
+            MODEL,
+            TURBO_16k_COST,
             system_template,
-            human_template,
-            user_input,
+            raw_messages,
             response,
-            source_documents=source_documents,
-            message_log=message_log,
+            source_documents,
         )
-
+        debug_steps(
+            self.row,
+            f"{response}, Additional information: Model-{MODEL}, Tokens-{tokens}, Cost-{total_cost}, PROMPT-{prompt}",
+        )
         return raw_prompt, response, source_documents, total_cost
+
+    # @time_it
+    # def chat_completion(self, user_input, message_log, client_id, connection_id):
+    #     human_template = "{question}"
+
+    #     system_template = PROMPT(user_input)
+
+    #     messages = [
+    #         SystemMessagePromptTemplate.from_template(system_template),
+    #     ]
+
+    #     for human, ai in pairwise(message_log):
+    #         messages.append(HumanMessage(content=human))
+    #         messages.append(AIMessage(content=ai))
+
+    #     messages.append(HumanMessagePromptTemplate.from_template(human_template))
+    #     prompt = ChatPromptTemplate.from_messages(messages)
+    #     chain_type_kwargs = {"prompt": prompt}
+
+    #     llm = ChatOpenAILLMProvider(
+    #         model_name=SYSTEM_MODEL,
+    #         max_tokens=TOKENS,
+    #     ).configure_model(
+    #         callbacks=[AWSStreamHandler(client_id, connection_id)], streaming=True
+    #     )
+
+    #     chain = RetrievalQAWithSourcesChain.from_chain_type(
+    #         llm=llm,
+    #         chain_type="stuff",
+    #         retriever=self.vector_store.as_retriever(
+    #             search_type=SEARCH_TYPE, search_kwargs=SEARCH_KWARGS
+    #         ),
+    #         chain_type_kwargs=chain_type_kwargs,
+    #         return_source_documents=True,
+    #     )
+
+    #     chain_response = chain(user_input)
+    #     response = chain_response["answer"]
+    #     source_documents = chain_response["source_documents"]
+
+    #     raw_prompt = self.generate_raw_prompt(
+    #         system_template, human_template, json.dumps(message_log, indent=2)
+    #     )
+
+    #     total_cost = get_cost(
+    #         SYSTEM_MODEL,
+    #         SYSTEM_INPUT_COST,
+    #         SYSTEM_OUTPUT_COST,
+    #         system_template,
+    #         human_template,
+    #         user_input,
+    #         response,
+    #         source_documents=source_documents,
+    #         message_log=message_log,
+    #     )
+
+    #     return raw_prompt, response, source_documents, total_cost
 
     def main(self, user_input, message_log, client_id, connection_id):
         valid_query = True
