@@ -7,6 +7,9 @@ Parameters:
   CI:
     Type: String
     Description: Value of the CI
+  Stack:
+    Type: String
+    Description: Value of the Stack
   Environment:
     Type: String
     Description: Value of the Environment
@@ -108,7 +111,9 @@ Resources:
       DomainName: !Ref RestApiDomain
       RestApiId: !Ref ApiDeployment
       Stage: !Ref Environment
-    DependsOn: RestApiCustomDomain
+    DependsOn: 
+      - RestApiCustomDomain
+      - ApiDeployment
     
 
   # # Add custom domain for Socket API
@@ -197,7 +202,7 @@ Resources:
   RestApiGatewayAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/apigateway/${Environment}-restapi-access-logs'
+      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-restapi-access-logs'
 
   SocketApiFunction:
     Type: AWS::Serverless::Function
@@ -228,7 +233,7 @@ Resources:
   SocketApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
-      Name: SocketApi
+      Name: ${Stack}-${Environment}-SocketApi
       ProtocolType: WEBSOCKET
       RouteSelectionExpression: "$request.body.action"
 
@@ -275,7 +280,7 @@ Resources:
   SocketApiGatewayAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/apigateway/${Environment}-socketapi-access-logs'
+      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-socketapi-access-logs'
   ApiGatewayLoggingRole:
     Type: AWS::IAM::Role
     Properties:

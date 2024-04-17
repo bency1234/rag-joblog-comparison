@@ -106,6 +106,7 @@ jobs:
               ParameterKey=SocketApiDomain,ParameterValue=${{env.SocketApiDomain}} \
               ParameterKey=RestApiCertArn,ParameterValue=${{env.RestApiCertArn}} \
               ParameterKey=SocketApiCertArn,ParameterValue=${{env.SocketApiCertArn}} \
+              ParameterKey=Stack,ParameterValue=${{env.STACK}} \
               ParameterKey=Environment,ParameterValue=${{env.ENVIRONMENT}} \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
