@@ -152,22 +152,22 @@ Resources:
       #     ResourcePath: '/*'
       #     MetricsEnabled: true
 
-  MetricScheduler:
-    Type: AWS::Serverless::Function
-    Properties:
-      PackageType: Image
-      Architectures:
-      - x86_64
-      Role: !Ref LambdaExecutionRole
-      Events:
-        ScheduledEvent:
-          Type: Schedule
-          Properties:
-            Schedule: cron(0/5 * ? * * *)
-    Metadata:
-        Dockerfile: metric.Dockerfile
-        DockerContext: apis/
-        DockerTag: python3.10-v1
+  # MetricScheduler:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     PackageType: Image
+  #     Architectures:
+  #     - x86_64
+  #     Role: !Ref LambdaExecutionRole
+  #     Events:
+  #       ScheduledEvent:
+  #         Type: Schedule
+  #         Properties:
+  #           Schedule: cron(0/5 * ? * * *)
+  #   Metadata:
+  #       Dockerfile: metric.Dockerfile
+  #       DockerContext: apis/
+  #       DockerTag: python3.10-v1
 
 
   ApiGatewayCloudWatchLogsRole:

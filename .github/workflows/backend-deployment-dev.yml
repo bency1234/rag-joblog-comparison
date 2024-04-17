@@ -3,7 +3,7 @@ name: Deploy-Backend-Lambda-dev
 on:
   push:
     branches:
-      - dev  # Adjust this to match your main branch
+      - master  # Adjust this to match your main branch
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}                  
@@ -14,8 +14,8 @@ env:
   SubnetTwo: ${{ vars.SUBNETTWO }}
   SubnetThree: ${{ vars.SUBNETTHREE }}
   LambdaExecutionRole: ${{ vars.LAMBDAEXECUTIONROLE }}
-  RestApiDomain: rag-base-restapi.bitcotapps.com
-  SocketApiDomain: rag-base-socketapi.bitcotapps.com
+  RestApiDomain: ${{ vars.RESTAPIDOMAIN }}
+  SocketApiDomain: ${{ vars.SOCKETAPIDOMAIN }}
   RestApiCertArn: ${{ vars.RESTAPICERTARN }}
   SocketApiCertArn: ${{ vars.SOCKETAPICERTARN }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
