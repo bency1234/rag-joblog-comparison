@@ -7,6 +7,9 @@ Parameters:
   CI:
     Type: String
     Description: Value of the CI
+  Stack:
+    Type: String
+    Description: Value of the Stack
   Environment:
     Type: String
     Description: Value of the Environment
@@ -43,6 +46,9 @@ Parameters:
   SocketApiCertArn:
     Type: String
     Description: ACM Certificate Arn for SocketAPI
+  SocketApiName:
+    Type: String
+    Description: Socket API Name
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -108,7 +114,9 @@ Resources:
       DomainName: !Ref RestApiDomain
       RestApiId: !Ref ApiDeployment
       Stage: !Ref Environment
-    DependsOn: RestApiCustomDomain
+    DependsOn: 
+      - RestApiCustomDomain
+      - ApiDeployment
     
 
   # # Add custom domain for Socket API
@@ -152,6 +160,26 @@ Resources:
       #     ResourcePath: '/*'
       #     MetricsEnabled: true
 
+<<<<<<< HEAD
+=======
+  # MetricScheduler:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     PackageType: Image
+  #     Architectures:
+  #     - x86_64
+  #     Role: !Ref LambdaExecutionRole
+  #     Events:
+  #       ScheduledEvent:
+  #         Type: Schedule
+  #         Properties:
+  #           Schedule: cron(0/5 * ? * * *)
+  #   Metadata:
+  #       Dockerfile: metric.Dockerfile
+  #       DockerContext: apis/
+  #       DockerTag: python3.10-v1
+
+>>>>>>> f9688826a5a03bae813721e82834a822be005885
 
   ApiGatewayCloudWatchLogsRole:
     Type: AWS::IAM::Role
@@ -180,7 +208,7 @@ Resources:
   RestApiGatewayAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/apigateway/${Environment}-restapi-access-logs'
+      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-restapi-access-logs'
 
   SocketApiFunction:
     Type: AWS::Serverless::Function
@@ -211,7 +239,7 @@ Resources:
   SocketApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
-      Name: SocketApi
+      Name: !Ref SocketApiName
       ProtocolType: WEBSOCKET
       RouteSelectionExpression: "$request.body.action"
 
@@ -258,7 +286,7 @@ Resources:
   SocketApiGatewayAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/apigateway/${Environment}-socketapi-access-logs'
+      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-socketapi-access-logs'
   ApiGatewayLoggingRole:
     Type: AWS::IAM::Role
     Properties:
