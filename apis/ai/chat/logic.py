@@ -43,20 +43,10 @@ class GenerateResponse:
     #         + "Message_log"
     #         + json.dumps(message_log)
     #     )
-
-    def get_prompt_token_and_cost(
-        self, model, cost, prompt, examples, response, source_documents
-    ):
-        message_log_string = json.dumps(examples, indent=2)
-        final_prompt = prompt + "Message_log" + message_log_string
-        tokens = get_tokens(
-            model, f"{prompt},{message_log_string},{response},{source_documents}"
-        )
-        total_cost = get_cost(tokens, cost)
-        return final_prompt, tokens, total_cost
     
     @time_it
     def chat_completion(self, user_input, message_log, client_id, connection_id):
+        print("user input........................", user_input)
         MODEL = TURBO_16k
         system_template = (
             PROMPT(user_input)
@@ -67,7 +57,8 @@ class GenerateResponse:
         ----------------
         """
         )
-        logger.info("SYSTEM TEMPLATE", system_template)
+        print("system template....................", system_template)
+        #logger.info("SYSTEM TEMPLATE", system_template)
         messages = [
             SystemMessagePromptTemplate.from_template(system_template),
         ]
@@ -91,8 +82,8 @@ class GenerateResponse:
             max_tokens=TOKENS,
             openai_api_key=openai.api_key,
             streaming=True,
-        ).configure_model(
-             callbacks=[AWSStreamHandler(client_id, connection_id)], streaming=True)
+        ) #.configure_model(
+             #callbacks=[AWSStreamHandler(client_id, connection_id)], streaming=True)
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             llm=llm,
             chain_type="stuff",
@@ -105,27 +96,14 @@ class GenerateResponse:
         )
         #debug_attribute("source documents", chain.source_documents)
         chain_response = chain(user_input)
-        logger.info("COMPLETE RESPONSE", chain_response)
+        #logger.info("COMPLETE RESPONSE", chain_response)
         print("COMPLETE RESPONSE-->", chain_response)
         response = chain_response["answer"].strip()
         source_documents = chain_response["source_documents"]
-        logger.info("Source Documents", source_documents)
-        (
-            raw_prompt,
-            tokens,
-            total_cost,
-        ) = self.get_prompt_token_and_cost(
-            MODEL,
-            TURBO_16k_COST,
-            system_template,
-            raw_messages,
-            response,
-            source_documents,
-        )
-        debug_steps(
-            self.row,
-            f"{response}, Additional information: Model-{MODEL}, Tokens-{tokens}, Cost-{total_cost}, PROMPT-{prompt}",
-        )
+        #logger.info("Source Documents", source_documents)
+
+        raw_prompt = ""
+        total_cost = ""
         return raw_prompt, response, source_documents, total_cost
 
     # @time_it

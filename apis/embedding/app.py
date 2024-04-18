@@ -15,7 +15,7 @@ from common.lambda_utils import call_fn
 from werkzeug.utils import secure_filename
 
 app = get_app(db)
-BASE_DIR = os.path.abspath("/tmp")
+#BASE_DIR = os.path.abspath("/tmp")
 
 
 def calculate_file_hash(filename):
@@ -78,6 +78,9 @@ def validate_filename(filename):
 
 
 def handle_valid_file(event, safe_filename, file_path, file_content):
+    print("safe_filename................", safe_filename)
+    print("file_path................", file_path)
+    print("file_content................", file_content)
     file_format = safe_filename.split(".")[-1]
     if file_format in ALLOWED_EXTENSIONS:
         with open(file_path, "wb") as file:
@@ -99,11 +102,14 @@ def path_traversal_check(file_name):
     error = None
     if os.path.dirname(file_name) != "":
         error = "Access denied: Attempted path traversal"
-    file_path = BASE_DIR + file_name
+    file_path = file_name
     real_path = os.path.realpath(file_path)
-    if not real_path.startswith(os.path.realpath(BASE_DIR)):
-        error = "Access denied: Attempted path traversal"
-    return real_path, error
+    print("real_path................", real_path)
+    #print("BASE_DIR................", BASE_DIR)
+    # print("file_path................", file_path)
+    # if not real_path.startswith(os.path.realpath(BASE_DIR)):
+    #     error = "Access denied: Attempted path traversal"
+    return file_path, error
 
 
 def lambda_handler1(*args):

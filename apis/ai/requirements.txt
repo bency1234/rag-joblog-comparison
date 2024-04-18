@@ -11,3 +11,4 @@ openai==1.13.3
 langchain_openai==0.0.8
 PyMuPDF==1.23.26
 flask-socketio==5.3.4
+markdown==3.6

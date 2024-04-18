@@ -11,7 +11,7 @@ from common.envs import get_secret_value_from_secret_manager, logger
 from dotenv import load_dotenv
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.text_splitter import CharacterTextSplitter
-
+from langchain.docstore.document import Document
 # Import local modules
 from langchain.vectorstores.pgvector import PGVector
 from langchain_community.document_loaders import (
@@ -46,7 +46,8 @@ def fetch_data_from_source(file_path, source_column=None):
     try:
         logger.info("File Format Enabled")
         split_docs = get_splits_of_different_types_of_format(file_path, source_column)
-    except DataFetchException as ex:
+        print("file_path.................", file_path)
+    except Exception as ex:
         logger.error(f"Failed to fetch data: {ex}")
         error = str(ex)
     return split_docs, error
@@ -61,23 +62,31 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
 
     split_docs = []
     FORMAT = file_path.split(".")[-1]
-    if FORMAT == "md":
-        loader = UnstructuredMarkdownLoader(f"./{file_path}", mode="single")
-        docs = loader.load_and_split()
+    print("FORMAT.................", FORMAT)
+
+    def split_text_unstructured(text, separator=","):
+        document = Document(page_content=str(text), metadata={"source": file_path})
         text_splitter = CharacterTextSplitter(
-            chunk_size=CHUNK_SIZE_LIMIT, chunk_overlap=MAX_CHUNK_OVERLAP
+            separator=separator,
+            chunk_size=CHUNK_SIZE_LIMIT,
+            chunk_overlap=MAX_CHUNK_OVERLAP,
         )
-        split_docs = text_splitter.split_documents(docs)
+        return text_splitter.split_documents([document])
+    
+    if FORMAT == "md":
+        text = load_and_split_md(file_path)
         
     elif FORMAT == "pdf":
-        loader = PyPDFLoader(file_path)
-        docs = loader.load_and_split()
-        text_splitter = CharacterTextSplitter(
-            chunk_size=CHUNK_SIZE_LIMIT, chunk_overlap=MAX_CHUNK_OVERLAP
-        )
-        logger.info("text splitter", text_splitter)
-        split_docs = text_splitter.split_documents(docs)
-        print("split", split_docs)
+        text = load_and_split_pdf(file_path)
+        # loader = PyPDFLoader(file_path)
+        # docs = loader.load_and_split()
+        # text_splitter = CharacterTextSplitter(
+        #     chunk_size=CHUNK_SIZE_LIMIT, chunk_overlap=MAX_CHUNK_OVERLAP
+        # )
+        # logger.info("text splitter", text_splitter)
+        # split_docs = text_splitter.split_documents(docs)
+        # print("split", split_docs)
+
     elif FORMAT in ["doc", "docx"]:
         loader = UnstructuredWordDocumentLoader(file_path, mode="single")
         docs = loader.load_and_split()
@@ -86,9 +95,21 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
             separator=separator, chunk_size=CHUNK_SIZE_LIMIT, chunk_overlap=MAX_CHUNK_OVERLAP
         )
         split_docs = text_splitter.split_documents(docs)
-    else:
-        raise InvalidFileFormat(f"Invalid file format - {FORMAT}")
-    return split_docs
+    if text:
+        split_docs = split_text_unstructured(text)
+        collection =  "joblog"#get_collection_name(auth_id, workspace_id, is_shared)
+        
+        PGVector.from_documents(
+            embedding=EMBEDDINGS_FUNCTION,
+            documents=split_docs,
+            collection_name=collection,
+            connection_string=CONNECTION_STRING,
+        )
+        return split_docs
+    return False
+    # else:
+    #     raise InvalidFileFormat(f"Invalid file format - {FORMAT}")
+    #return split_docs
 
 
 def insert_data_into_vector_db(file_path, source_column=None):
@@ -98,14 +119,7 @@ def insert_data_into_vector_db(file_path, source_column=None):
     output = None
     logger.info("Embedding Started...")
     logger.info(f"Collection Name: {COLLECTION_NAME}")
-    split_docs, err = fetch_data_from_source(file_path, source_column)
-
-    PGVector.from_documents(
-        embedding=EMBEDDINGS_FUNCTION,
-        documents=split_docs,
-        collection_name=COLLECTION_NAME,
-        connection_string=CONNECTION_STRING,
-    )
+    err = fetch_data_from_source(file_path, source_column)
     if err:
         output = f"Embedding failed with the error - {err}"
         logger.error(output)
@@ -114,3 +128,31 @@ def insert_data_into_vector_db(file_path, source_column=None):
         logger.info(output)
 
     return output
+
+def load_and_split_md(file_name):
+    try:
+        loader = UnstructuredMarkdownLoader(f"./{file_name}", mode="single")
+        text = loader.load_and_split()
+        if text:
+            print("Text using UnstructuredWordDocumentLoader", text)
+            return text
+        else:
+            raise ValueError("Empty text returned by UnstructuredWordDocumentLoader")
+    except Exception as e:
+        print(f"Failed to process markdown document: {e}", e)
+    return None
+
+def load_and_split_pdf(file_name):
+    try:
+        # use PyPDFLoader if PDFMinerLoader also fails
+        loader = PyPDFLoader(f"./{file_name}")
+        print("Processing with PyPDFLoader", file_name)
+        text = loader.load_and_split()
+        if text:
+            print("Text using PyPDFLoader", text)
+            return text
+        else:
+            raise ValueError("Empty text returned by PyPDFLoader")
+    except Exception as e:
+        print(f"PyPDFLoader failed: {e}", e)
+    return None
