@@ -88,13 +88,15 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
         # print("split", split_docs)
 
     elif FORMAT in ["doc", "docx"]:
-        loader = UnstructuredWordDocumentLoader(file_path, mode="single")
-        docs = loader.load_and_split()
-        separator=","
-        text_splitter = CharacterTextSplitter(
-            separator=separator, chunk_size=CHUNK_SIZE_LIMIT, chunk_overlap=MAX_CHUNK_OVERLAP
-        )
-        split_docs = text_splitter.split_documents(docs)
+        text = load_and_split_word(file_path)
+        print("text...................", text)
+        # loader = UnstructuredWordDocumentLoader(file_path, mode="single")
+        # docs = loader.load_and_split()
+        # separator=","
+        # text_splitter = CharacterTextSplitter(
+        #     separator=separator, chunk_size=CHUNK_SIZE_LIMIT, chunk_overlap=MAX_CHUNK_OVERLAP
+        # )
+        # split_docs = text_splitter.split_documents(docs)
     if text:
         split_docs = split_text_unstructured(text)
         collection =  "joblog"#get_collection_name(auth_id, workspace_id, is_shared)
@@ -155,4 +157,17 @@ def load_and_split_pdf(file_name):
             raise ValueError("Empty text returned by PyPDFLoader")
     except Exception as e:
         print(f"PyPDFLoader failed: {e}", e)
+    return None
+
+def load_and_split_word(file_name):
+    try:
+        loader = UnstructuredWordDocumentLoader(f"./{file_name}", mode="single")
+        text = loader.load_and_split()
+        if text:
+            print("Text using UnstructuredWordDocumentLoader", text)
+            return text
+        else:
+            raise ValueError("Empty text returned by UnstructuredWordDocumentLoader")
+    except Exception as e:
+        print(f"Failed to process Word document: {e}", e)
     return None
