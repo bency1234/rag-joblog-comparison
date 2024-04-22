@@ -1,5 +1,6 @@
 import json
 import re
+
 from ai.chat.utils import pairwise
 from ai.common.utils.cost import get_cost
 from ai.common.utils.debug import time_it
@@ -12,19 +13,17 @@ from ai.llms.constants import (
     TOKENS,
 )
 from ai.llms.openaillm import ChatOpenAILLMProvider
-from langchain.chat_models import ChatOpenAI
 from ai.prompts.system_prompt import PROMPT
-from ai.chat.token import get_tokens
 from langchain.chains import RetrievalQAWithSourcesChain
+from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.schema import AIMessage, HumanMessage
-from langchain.memory import ConversationBufferWindowMemory
+
 from .stream_handler import AWSStreamHandler
-from common.envs import logger
+
 
 class GenerateResponse:
     def __init__(self, row, vector_store):
@@ -33,12 +32,9 @@ class GenerateResponse:
 
     def generate_raw_prompt(self, system_template, message_log):
         return (
-            system_template
-            + "Human prompt"
-            + "Message_log"
-            + json.dumps(message_log)
+            system_template + "Human prompt" + "Message_log" + json.dumps(message_log)
         )
-    
+
     @time_it
     def chat_completion(self, user_input, message_log, client_id, connection_id):
         print("user input........................", user_input)
@@ -52,7 +48,7 @@ class GenerateResponse:
         """
         )
         print("system template....................", system_template)
-        #logger.info("SYSTEM TEMPLATE", system_template)
+        # logger.info("SYSTEM TEMPLATE", system_template)
         messages = [
             SystemMessagePromptTemplate.from_template(system_template),
         ]
@@ -76,7 +72,7 @@ class GenerateResponse:
         ).configure_model(
             callbacks=[AWSStreamHandler(client_id, connection_id)], streaming=True
         )
-    
+
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             llm=llm,
             chain_type="stuff",
@@ -87,16 +83,16 @@ class GenerateResponse:
             return_source_documents=True,
             memory=window_memory,
         )
-        #debug_attribute("source documents", chain.source_documents)
+        # debug_attribute("source documents", chain.source_documents)
         chain_response = chain(user_input)
-        #logger.info("COMPLETE RESPONSE", chain_response)
+        # logger.info("COMPLETE RESPONSE", chain_response)
         print("COMPLETE RESPONSE-->", chain_response)
         response = chain_response["answer"].strip()
         source_documents = chain_response["source_documents"]
-        #logger.info("Source Documents", source_documents)
+        # logger.info("Source Documents", source_documents)
 
         raw_prompt = self.generate_raw_prompt(
-            system_template,  json.dumps(message_log, indent=2)
+            system_template, json.dumps(message_log, indent=2)
         )
         print("raw prompt....................", raw_prompt)
 

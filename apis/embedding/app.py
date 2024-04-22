@@ -15,7 +15,7 @@ from common.lambda_utils import call_fn
 from werkzeug.utils import secure_filename
 
 app = get_app(db)
-#BASE_DIR = os.path.abspath("/tmp")
+# BASE_DIR = os.path.abspath("/tmp")
 
 
 def calculate_file_hash(filename):
@@ -105,7 +105,7 @@ def path_traversal_check(file_name):
     file_path = file_name
     real_path = os.path.realpath(file_path)
     print("real_path................", real_path)
-    #print("BASE_DIR................", BASE_DIR)
+    # print("BASE_DIR................", BASE_DIR)
     # print("file_path................", file_path)
     # if not real_path.startswith(os.path.realpath(BASE_DIR)):
     #     error = "Access denied: Attempted path traversal"
