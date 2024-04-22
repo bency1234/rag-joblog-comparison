@@ -27,7 +27,6 @@ def replace_quotes(datas):
 
 def write_to_db(*args):
     try:
-        print(args)
         event = args[0]
         data = get_event_data(event)
         record = data.get("record")
@@ -78,7 +77,6 @@ def write_to_db(*args):
             HTTPStatus.OK.value,
         )
     except Exception as e:
-        print(e)
         traceback.print_exception(e)
         logger.error(f"An error occurred: {str(e)}")
         return (

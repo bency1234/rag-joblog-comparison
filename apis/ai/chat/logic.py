@@ -21,7 +21,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-
+from common.envs import logger
 from .stream_handler import AWSStreamHandler
 
 
@@ -37,7 +37,7 @@ class GenerateResponse:
 
     @time_it
     def chat_completion(self, user_input, message_log, client_id, connection_id):
-        print("user input........................", user_input)
+        logger.info(f"user input......{user_input}")
         system_template = (
             PROMPT(user_input)
             + """
@@ -47,8 +47,7 @@ class GenerateResponse:
         ----------------
         """
         )
-        print("system template....................", system_template)
-        # logger.info("SYSTEM TEMPLATE", system_template)
+        logger.info(f"system template...........{system_template}")
         messages = [
             SystemMessagePromptTemplate.from_template(system_template),
         ]
@@ -83,18 +82,16 @@ class GenerateResponse:
             return_source_documents=True,
             memory=window_memory,
         )
-        # debug_attribute("source documents", chain.source_documents)
         chain_response = chain(user_input)
-        # logger.info("COMPLETE RESPONSE", chain_response)
-        print("COMPLETE RESPONSE-->", chain_response)
+        logger.info(f"COMPLETE RESPONSE {chain_response}")
         response = chain_response["answer"].strip()
         source_documents = chain_response["source_documents"]
-        # logger.info("Source Documents", source_documents)
+        logger.info(f"Source Documents {source_documents}")
 
         raw_prompt = self.generate_raw_prompt(
             system_template, json.dumps(message_log, indent=2)
         )
-        print("raw prompt....................", raw_prompt)
+        logger.info(f"raw prompt.........{raw_prompt}")
 
         total_cost = get_cost(
             SYSTEM_MODEL,
@@ -106,8 +103,6 @@ class GenerateResponse:
             source_documents=source_documents,
             message_log=message_log,
         )
-        print(total_cost)
-        raw_prompt = ""
         return raw_prompt, response, source_documents, total_cost
 
     def main(self, user_input, message_log, client_id, connection_id):
