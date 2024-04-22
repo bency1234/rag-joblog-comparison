@@ -78,9 +78,9 @@ def validate_filename(filename):
 
 
 def handle_valid_file(event, safe_filename, file_path, file_content):
-    print("safe_filename................", safe_filename)
-    print("file_path................", file_path)
-    print("file_content................", file_content)
+    logger.info(f"safe_filename.....{safe_filename}")
+    logger.info(f"file_path................{file_path}")
+    logger.info(f"file_content................{file_content}")
     file_format = safe_filename.split(".")[-1]
     if file_format in ALLOWED_EXTENSIONS:
         with open(file_path, "wb") as file:
@@ -103,12 +103,6 @@ def path_traversal_check(file_name):
     if os.path.dirname(file_name) != "":
         error = "Access denied: Attempted path traversal"
     file_path = file_name
-    real_path = os.path.realpath(file_path)
-    print("real_path................", real_path)
-    # print("BASE_DIR................", BASE_DIR)
-    # print("file_path................", file_path)
-    # if not real_path.startswith(os.path.realpath(BASE_DIR)):
-    #     error = "Access denied: Attempted path traversal"
     return file_path, error
 
 
