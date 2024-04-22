@@ -11,6 +11,8 @@ COPY ai/requirements.txt ./ai_requirements.txt
 RUN python3.10 -m pip install -r common_requirements.txt -t .
 RUN python3.10 -m pip install -r ai_requirements.txt -t .
 
+RUN python3.10 -m pip install antiword
+
 # Copy all Python files from the settings directory to the container
 # Ensure that the settings directory is at the same level as this Dockerfile
 COPY embedding/*.py ./
