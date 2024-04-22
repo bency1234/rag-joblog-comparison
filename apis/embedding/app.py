@@ -15,7 +15,6 @@ from common.lambda_utils import call_fn
 from werkzeug.utils import secure_filename
 
 app = get_app(db)
-# BASE_DIR = os.path.abspath("/tmp")
 
 
 def calculate_file_hash(filename):

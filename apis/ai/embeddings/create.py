@@ -91,12 +91,11 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
 
     if text:
         split_docs = split_text_unstructured(text)
-        collection = "joblog"  # get_collection_name(auth_id, workspace_id, is_shared)
 
         PGVector.from_documents(
             embedding=EMBEDDINGS_FUNCTION,
             documents=split_docs,
-            collection_name=collection,
+            collection_name=COLLECTION_NAME,
             connection_string=CONNECTION_STRING,
         )
         return split_docs
