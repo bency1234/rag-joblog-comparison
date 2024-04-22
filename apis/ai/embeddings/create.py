@@ -83,11 +83,11 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
 
     elif FORMAT in ["docx"]:
         text = load_and_split_word(file_path)
-        print("text...................", text)
+        logger.info(f"text.......{text}")
 
     elif FORMAT == "doc":
         text = subprocess.run(["antiword", file_path], capture_output=True, text=True)
-        print(text)
+        logger.info(f"text....{text}")
 
     if text:
         split_docs = split_text_unstructured(text)

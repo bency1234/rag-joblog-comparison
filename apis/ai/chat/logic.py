@@ -14,6 +14,7 @@ from ai.llms.constants import (
 )
 from ai.llms.openaillm import ChatOpenAILLMProvider
 from ai.prompts.system_prompt import PROMPT
+from common.envs import logger
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts.chat import (
@@ -21,7 +22,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from common.envs import logger
+
 from .stream_handler import AWSStreamHandler
 
 
