@@ -11,7 +11,7 @@ from ai.llms.constants import (
 from common.envs import get_secret_value_from_secret_manager, logger
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # Import local modules
 from langchain.vectorstores.pgvector import PGVector
@@ -66,10 +66,9 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
     FORMAT = file_path.split(".")[-1]
     logger.info(f"FORMAT.................{FORMAT}")
 
-    def split_text_unstructured(text, separator=","):
+    def split_text_unstructured(text):
         document = Document(page_content=str(text), metadata={"source": file_path})
-        text_splitter = CharacterTextSplitter(
-            separator=separator,
+        text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=CHUNK_SIZE_LIMIT,
             chunk_overlap=MAX_CHUNK_OVERLAP,
         )
@@ -125,12 +124,12 @@ def load_and_split_md(file_name):
         loader = UnstructuredMarkdownLoader(f"./{file_name}", mode="single")
         text = loader.load_and_split()
         if text:
-            print("Text using UnstructuredWordDocumentLoader", text)
+            logger.info(f"Text using UnstructuredWordDocumentLoader {text}")
             return text
         else:
             raise ValueError("Empty text returned by UnstructuredWordDocumentLoader")
     except Exception as e:
-        print(f"Failed to process markdown document: {e}", e)
+        logger.info(f"Failed to process markdown document: {e}")
     return None
 
 
@@ -146,7 +145,7 @@ def load_and_split_pdf(file_name):
         else:
             raise ValueError("Empty text returned by PyPDFLoader")
     except Exception as e:
-        print(f"PyPDFLoader failed: {e}", e)
+        logger.info(f"PyPDFLoader failed: {e}")
     return None
 
 

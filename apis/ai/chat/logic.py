@@ -22,7 +22,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-
+from langchain.schema import AIMessage, HumanMessage
 from .stream_handler import AWSStreamHandler
 
 
@@ -38,6 +38,7 @@ class GenerateResponse:
 
     @time_it
     def chat_completion(self, user_input, message_log, client_id, connection_id):
+        breakpoint()
         logger.info(f"user input......{user_input}")
         system_template = (
             PROMPT(user_input)
@@ -59,8 +60,8 @@ class GenerateResponse:
         for human, ai in pairwise(message_log):
             window_memory.chat_memory.add_user_message(human)
             window_memory.chat_memory.add_ai_message(ai)
-            raw_messages.append(human)
-            raw_messages.append(ai)
+            raw_messages.append(HumanMessage(human))
+            raw_messages.append(AIMessage(ai))
         messages.append(HumanMessagePromptTemplate.from_template("{question}"))
 
         prompt = ChatPromptTemplate.from_messages(messages)
