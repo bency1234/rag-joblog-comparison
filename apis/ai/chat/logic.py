@@ -39,7 +39,6 @@ class GenerateResponse:
 
     @time_it
     def chat_completion(self, user_input, message_log, client_id, connection_id):
-        breakpoint()
         logger.info(f"user input......{user_input}")
         system_template = (
             PROMPT(user_input)
