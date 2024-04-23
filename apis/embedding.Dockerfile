@@ -1,5 +1,7 @@
 # Use the base image provided by AWS for Lambda functions with Python 3.10
-FROM public.ecr.aws/lambda/python:3.10
+FROM python:3.10
+
+RUN apt-get update && apt-get install -y libreoffice libreoffice-gnome
 
 # Copy the requirements.txt file to the container to install Python dependencies
 COPY common/requirements.txt ./common_requirements.txt
