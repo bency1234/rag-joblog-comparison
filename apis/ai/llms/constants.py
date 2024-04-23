@@ -25,7 +25,6 @@ class OpenAITextLLM(Enum):
 
 class OpenAIChatLLM(Enum):
     TURBO = ("gpt-3.5-turbo", 0.0015, 0.002)
-    TURBO_16k = ("gpt-3.5-turbo-16k", 0.003, 0.004)
     GPT4_8K = ("gpt-4", 0.03, 0.06)
     GPT4_32k = ("gpt-4-32k", 0.06, 0.12)
     GPT4_TURBO = ("gpt-4-turbo-preview", 0.01, 0.03)
@@ -37,10 +36,11 @@ TEMPERATURE = 0
 TOKENS = 400
 TAG_TOKENS = 100
 TYPE_TOKENS = 50
+TEMPERATURE, TOKENS = 0, 300
 
 # Embeddings
 CHUNK_SIZE_LIMIT = 2000
-MAX_CHUNK_OVERLAP = 200
+MAX_CHUNK_OVERLAP = 100
 
 BATCH_SIZE = 100
 UNITS = 1000
@@ -58,7 +58,7 @@ EMBEDDINGS_FUNCTION = OpenAIEmbeddings(
 )
 
 
-COLLECTION_NAME = "openai_embeddings"
+COLLECTION_NAME = "joblog"
 SCORE_THRESHOLD = 0.3
 NUMBER_OF_DOCUMENTS_TO_BE_RETURNED = 4
 SEARCH_KWARGS = {

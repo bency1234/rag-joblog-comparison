@@ -15,7 +15,6 @@ from common.lambda_utils import call_fn
 from werkzeug.utils import secure_filename
 
 app = get_app(db)
-BASE_DIR = os.path.abspath("/tmp")
 
 
 def calculate_file_hash(filename):
@@ -47,7 +46,7 @@ def upload_to_s3(filename, file_path):
     return s3_url
 
 
-ALLOWED_EXTENSIONS = ["pdf", "csv"]
+ALLOWED_EXTENSIONS = ["pdf", "doc", "docx", "md"]
 
 
 def generate_bad_request_response(msg):
@@ -78,6 +77,9 @@ def validate_filename(filename):
 
 
 def handle_valid_file(event, safe_filename, file_path, file_content):
+    logger.info(f"safe_filename.....{safe_filename}")
+    logger.info(f"file_path................{file_path}")
+    logger.info(f"file_content................{file_content}")
     file_format = safe_filename.split(".")[-1]
     if file_format in ALLOWED_EXTENSIONS:
         with open(file_path, "wb") as file:
@@ -99,11 +101,8 @@ def path_traversal_check(file_name):
     error = None
     if os.path.dirname(file_name) != "":
         error = "Access denied: Attempted path traversal"
-    file_path = BASE_DIR + file_name
-    real_path = os.path.realpath(file_path)
-    if not real_path.startswith(os.path.realpath(BASE_DIR)):
-        error = "Access denied: Attempted path traversal"
-    return real_path, error
+    file_path = file_name
+    return file_path, error
 
 
 def lambda_handler1(*args):

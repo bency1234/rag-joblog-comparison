@@ -9,7 +9,6 @@ def get_cost(
     input_cost,
     output_cost,
     prompt,
-    human_template,
     user_input,
     response,
     source_documents,
@@ -22,7 +21,6 @@ def get_cost(
     final_prompt = (
         prompt
         + "Human prompt"
-        + human_template
         + "Message_log"
         + json.dumps(message_log, indent=2)
         + "User_input"
