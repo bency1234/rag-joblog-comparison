@@ -135,7 +135,6 @@ def load_and_split_md(file_name):
 
 def load_and_split_pdf(file_name):
     try:
-        # use PyPDFLoader if PDFMinerLoader also fails
         loader = PyPDFLoader(f"./{file_name}")
         logger.info(f"Processing with PyPDFLoader{file_name}")
         text = loader.load_and_split()
