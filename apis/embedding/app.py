@@ -9,6 +9,7 @@ from http import HTTPStatus
 import boto3
 from ai.embeddings.create import insert_data_into_vector_db
 from common.app_utils import get_app
+from common.chatbot import UserFiles
 from common.db import db
 from common.envs import get_secret_value_from_secret_manager, logger
 from common.lambda_utils import call_fn
@@ -65,6 +66,9 @@ def handle_uploaded_file_success(filename, file_path, source_column):
     with app.app_context():
         output = insert_data_into_vector_db(file_path, source_column)
         s3_url = upload_to_s3(filename, file_path)
+        user_file = UserFiles(file_name=filename, embedded=True, s3_url=s3_url)
+        db.session.add(user_file)
+        db.session.commit()
         return {"message": output, "s3_url": s3_url}
 
 
