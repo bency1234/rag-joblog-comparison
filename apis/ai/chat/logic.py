@@ -87,13 +87,13 @@ class GenerateResponse:
         chain_response = chain(user_input)
         logger.info(f"COMPLETE RESPONSE {chain_response}")
         response = chain_response["answer"].strip()
+        logger.info(f"response........{response}")
         source_documents = chain_response["source_documents"]
         logger.info(f"Source Documents {source_documents}")
 
         raw_prompt = self.generate_raw_prompt(
             system_template, json.dumps(message_log, indent=2)
         )
-        logger.info(f"raw prompt.........{raw_prompt}")
 
         total_cost = get_cost(
             SYSTEM_MODEL,
