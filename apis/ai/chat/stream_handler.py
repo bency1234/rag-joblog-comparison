@@ -83,6 +83,7 @@ class AWSStreamHandler(BaseCallbackHandler):
     def _process_file_name(self, file_name):
         file_na = f"%{file_name[:30]}%"
         user_file = UserFiles.query.filter(UserFiles.file_name.like(file_na)).first()
+        logger.info(f"user_file...{user_file}")
         if self.is_citations == "YES" and not self.is_citations_printed:
             self.is_citations_printed = True
             stream_response(construct_bot_response("Citations:**  \n\n"))
@@ -93,10 +94,11 @@ class AWSStreamHandler(BaseCallbackHandler):
 
     def _process_user_file(self, user_file, file_name):
         s3_url = user_file.s3_url
+        logger.info(f"File Name: {file_name}")
         self.seen_s3_urls.add(file_name)
         self.streamed_content = ""
         self.count += 1
-        up_s3_url = s3_url.replace(" ", "%")
+        up_s3_url = s3_url.replace(" ", "+")
         up_file_name = file_name.split("_", 1)[1].rsplit(".", 1)[0]
         pdf_link = f"[{up_file_name}]({up_s3_url})"
         markdown_pdf_link = f"{self.count}. {pdf_link}"
