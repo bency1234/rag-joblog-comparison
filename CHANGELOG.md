@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Sprint 34 - Apr 22 - May 03
 
 ### Added
+- Updated code from dev to master
+
+### Added
+[AI-09]
+- Code changes on streamming to get the citation in chatbot response
+- updated the chat interface prompt 
+
+### Added
 [AI-02]
 - Fixed the Embeddings for the following extension [.md, .docx, .pdf]
 - Revised the code for the chat interface.
