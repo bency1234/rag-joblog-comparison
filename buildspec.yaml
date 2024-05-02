@@ -53,7 +53,7 @@ phases:
             ParameterKey=SubnetThree,ParameterValue=$SUBNET_THREE \
             ParameterKey=SubnetFour,ParameterValue=$SUBNET_FOUR \
             ParameterKey=SecurityGroup,ParameterValue=$SECURITY_GROUP \
-            ParameterKey=LAMBDA_EXECUTION_ROLE,ParameterValue=$LAMBDA_EXECUTION_ROLE \
+            ParameterKey=LambdaExecutionRole,ParameterValue=$LAMBDA_EXECUTION_ROLE \
             ParameterKey=RestApiDomain,ParameterValue=$RESTAPI_DOMAIN \
             ParameterKey=SocketApiDomain,ParameterValue=$SOCKETAPI_DOMAIN \
             ParameterKey=RestApiCertArn,ParameterValue=$RESTAPI_CERT_ARN \
