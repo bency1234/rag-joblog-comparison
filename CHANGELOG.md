@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Sprint 34 - Apr 22 - May 03
 
 ### Added
-- Updated code from dev to demo
+- Updated code from dev to master
 
 ### Added
 [AI-09]
