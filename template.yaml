@@ -16,21 +16,21 @@ Parameters:
   SecretName:
     Type: String
     Description: Name of the secret
-  # SecurityGroup:
-  #   Type: String
-  #   Description: Security Group ID for the Lambda function.
-  # SubnetOne:
-  #   Type: String
-  #   Description: First Subnet ID for the Lambda function.
-  # SubnetTwo:
-  #   Type: String
-  #   Description: Second Subnet ID for the Lambda function.
-  # SubnetThree:
-  #   Type: String
-  #   Description: Third Subnet ID for the Lambda function.
-  # SubnetFour:
-  #   Type: String
-  #   Description: Third Subnet ID for the Lambda function.
+  SecurityGroup:
+    Type: String
+    Description: Security Group ID for the Lambda function.
+  SubnetOne:
+    Type: String
+    Description: First Subnet ID for the Lambda function.
+  SubnetTwo:
+    Type: String
+    Description: Second Subnet ID for the Lambda function.
+  SubnetThree:
+    Type: String
+    Description: Third Subnet ID for the Lambda function.
+  SubnetFour:
+    Type: String
+    Description: Third Subnet ID for the Lambda function.
   LambdaExecutionRole:
     Type: String
     Description: Arn of the Lambda Execution role
@@ -87,14 +87,14 @@ Globals:
     # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
     LoggingConfig:
       LogFormat: JSON
-    # VpcConfig:
-    #   SubnetIds:
-    #     - !Ref SubnetOne
-    #     - !Ref SubnetTwo
-    #     - !Ref SubnetThree
-    #     # - !Ref SubnetFour
-    #   SecurityGroupIds:
-    #     - !Ref SecurityGroup
+    VpcConfig:
+      SubnetIds:
+        - !Ref SubnetOne
+        - !Ref SubnetTwo
+        - !Ref SubnetThree
+        - !Ref SubnetFour
+      SecurityGroupIds:
+        - !Ref SecurityGroup
     
 
 Resources:

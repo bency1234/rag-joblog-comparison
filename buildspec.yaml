@@ -1,0 +1,66 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.10
+    commands:
+      - echo "Updating system and installing jq..."
+      - apt-get update && apt-get install -y jq  # Use this for Debian/Ubuntu-based images
+      # - yum install -y jq  # Uncomment this for Amazon Linux-based images
+
+  pre_build:
+    commands:
+      - |
+        echo "Retrieving secrets from AWS Secrets Manager using provided SECRET_NAME..."
+        secrets=$(aws secretsmanager get-secret-value --secret-id $SECRET_NAME --query SecretString --output text)
+        export DATABASE_USER=$(echo $secrets | jq -r '.DATABASE_USER')
+        export DATABASE_PASS=$(echo $secrets | jq -r '.DATABASE_PASS')
+        export DATABASE_HOST=$(echo $secrets | jq -r '.DATABASE_HOST')
+        export DATABASE_PORT=$(echo $secrets | jq -r '.DATABASE_PORT')
+        export DATABASE_NAME=$(echo $secrets | jq -r '.DATABASE_NAME')
+
+  build:
+    commands:
+      - |
+        if [ -d ".aws-sam" ]; then
+          echo "Removing existing .aws-sam directory..."
+          rm -rf .aws-sam
+        else
+          echo ".aws-sam directory does not exist. Skipping removal."
+        fi
+      - echo "Installing Python dependencies..."
+      - cd apis/common && pip install -r requirements.txt && cd ..
+      - echo "Executing migration script..."
+      - python app.py
+      - cd ..
+      - echo "Building the Lambda function with AWS SAM..."
+      - sam build
+      - echo "Deploying the application..."
+      - |
+        sam deploy --template-file .aws-sam/build/template.yaml \
+          --stack-name $STACK-$ENVIRONMENT-api \
+          --capabilities CAPABILITY_IAM \
+          --region $REGION \
+          --parameter-overrides \
+            ParameterKey=SecretName,ParameterValue=$SECRET_NAME \
+            ParameterKey=CI,ParameterValue=$CI \
+            ParameterKey=Environment,ParameterValue=$ENVIRONMENT \
+            ParameterKey=Stack,ParameterValue=$STACK \
+            ParameterKey=Requestsperminute,ParameterValue=$REQUESTS_PER_MINUTE \
+            ParameterKey=SubnetOne,ParameterValue=$SUBNET_ONE \
+            ParameterKey=SubnetTwo,ParameterValue=$SUBNET_TWO \
+            ParameterKey=SubnetThree,ParameterValue=$SUBNET_THREE \
+            ParameterKey=SubnetFour,ParameterValue=$SUBNET_FOUR \
+            ParameterKey=SecurityGroup,ParameterValue=$SECURITY_GROUP \
+            ParameterKey=LAMBDA_EXECUTION_ROLE,ParameterValue=$LAMBDA_EXECUTION_ROLE \
+            ParameterKey=RestApiDomain,ParameterValue=$RESTAPI_DOMAIN \
+            ParameterKey=SocketApiDomain,ParameterValue=$SOCKETAPI_DOMAIN \
+            ParameterKey=RestApiCertArn,ParameterValue=$RESTAPI_CERT_ARN \
+            ParameterKey=SocketApiCertArn,ParameterValue=$SOCKETAPI_CERT_ARN \
+            ParameterKey=SocketApiName,ParameterValue=$STACK-$ENVIRONMENT-SocketApi \
+          --no-confirm-changeset \
+          --no-fail-on-empty-changeset \
+          --resolve-s3 \
+          --resolve-image-repos \
+          --disable-rollback
