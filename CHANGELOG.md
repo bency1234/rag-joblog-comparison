@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Sprint 34 - Apr 22 - May 03
 
 ### Added
+- Merge code from dev to demo
+
+### Added
 [AI-09]
 - Code changes on streamming to get the citation in chatbot response
 - updated the chat interface prompt 
