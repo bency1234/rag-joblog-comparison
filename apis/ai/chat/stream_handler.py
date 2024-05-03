@@ -67,9 +67,9 @@ class AWSStreamHandler(BaseCallbackHandler):
             if self.response.strip().startswith("Content"):
                 response_has_props = True
                 if "Content: " in self.response:
-                    self._stream_response(token)
+                    self._stream_response(token, self.client, self.connection_id)
             elif not response_has_props:
-                self._stream_response(token)
+                self._stream_response(token, self.client, self.connection_id)
 
     def _process_streamed_content(self):
         start_index = self.streamed_content.find("[")
@@ -86,11 +86,19 @@ class AWSStreamHandler(BaseCallbackHandler):
         logger.info(f"user_file...{user_file}")
         if self.is_citations == "YES" and not self.is_citations_printed:
             self.is_citations_printed = True
-            stream_response(construct_bot_response("Citations:**  \n\n"))
+            stream_response(
+                construct_bot_response("Citations:**  \n\n"),
+                self.client,
+                self.connection_id,
+            )
         if user_file and file_name not in self.seen_s3_urls:
             self._process_user_file(user_file, file_name)
         else:
-            stream_response(construct_bot_response("No Source available"))
+            stream_response(
+                construct_bot_response("No Source available"),
+                self.client,
+                self.connection_id,
+            )
 
     def _process_user_file(self, user_file, file_name):
         s3_url = user_file.s3_url
@@ -102,7 +110,11 @@ class AWSStreamHandler(BaseCallbackHandler):
         up_file_name = file_name.split("_", 1)[1].rsplit(".", 1)[0]
         pdf_link = f"[{up_file_name}]({up_s3_url})"
         markdown_pdf_link = f"{self.count}. {pdf_link}"
-        stream_response(construct_bot_response(f"{markdown_pdf_link} \n"))
+        stream_response(
+            construct_bot_response(f"{markdown_pdf_link} \n"),
+            self.client,
+            self.connection_id,
+        )
 
-    def _stream_response(self, token):
-        stream_response(construct_bot_response(token))
+    def _stream_response(self, token, client, connection_id):
+        stream_response(construct_bot_response(token), self.client, self.connection_id)
