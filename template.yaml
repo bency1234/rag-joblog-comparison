@@ -98,45 +98,45 @@ Globals:
     
 
 Resources:
-  RestApiCustomDomain:
-    Type: AWS::ApiGateway::DomainName
-    Properties:
-      DomainName: !Ref RestApiDomain
-      CertificateArn: !Ref RestApiCertArn
-      EndpointConfiguration:
-        Types:
-          - "EDGE"
-      SecurityPolicy: TLS_1_2
+  # RestApiCustomDomain:
+  #   Type: AWS::ApiGateway::DomainName
+  #   Properties:
+  #     DomainName: !Ref RestApiDomain
+  #     CertificateArn: !Ref RestApiCertArn
+  #     EndpointConfiguration:
+  #       Types:
+  #         - "EDGE"
+  #     SecurityPolicy: TLS_1_2
       
-  RestApiBasePathMapping:
-    Type: AWS::ApiGateway::BasePathMapping
-    Properties:
-      DomainName: !Ref RestApiDomain
-      RestApiId: !Ref ApiDeployment
-      Stage: !Ref Environment
-    DependsOn: 
-      - RestApiCustomDomain
-      - ApiDeployment
+  # RestApiBasePathMapping:
+  #   Type: AWS::ApiGateway::BasePathMapping
+  #   Properties:
+  #     DomainName: !Ref RestApiDomain
+  #     RestApiId: !Ref ApiDeployment
+  #     Stage: !Ref Environment
+  #   DependsOn: 
+  #     - RestApiCustomDomain
+  #     - ApiDeployment
     
 
-  # # Add custom domain for Socket API
-  SocketApiDomainName:
-    Type: AWS::ApiGatewayV2::DomainName
-    Properties:
-      DomainName: !Ref SocketApiDomain
-      DomainNameConfigurations:
-        - CertificateArn: !Ref SocketApiCertArn
-          EndpointType: REGIONAL
+  # # # Add custom domain for Socket API
+  # SocketApiDomainName:
+  #   Type: AWS::ApiGatewayV2::DomainName
+  #   Properties:
+  #     DomainName: !Ref SocketApiDomain
+  #     DomainNameConfigurations:
+  #       - CertificateArn: !Ref SocketApiCertArn
+  #         EndpointType: REGIONAL
 
-  SocketApiBasePathMapping:
-    Type: AWS::ApiGatewayV2::ApiMapping
-    Properties:
-      ApiId: !Ref SocketApi
-      DomainName: !Ref SocketApiDomain
-      Stage: !Ref Stage
-    DependsOn: 
-      - SocketApiDomainName
-      - Stage
+  # SocketApiBasePathMapping:
+  #   Type: AWS::ApiGatewayV2::ApiMapping
+  #   Properties:
+  #     ApiId: !Ref SocketApi
+  #     DomainName: !Ref SocketApiDomain
+  #     Stage: !Ref Stage
+  #   DependsOn: 
+  #     - SocketApiDomainName
+  #     - Stage
 
   ApiDeployment:
     Type: AWS::Serverless::Api

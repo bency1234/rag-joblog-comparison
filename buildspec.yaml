@@ -60,7 +60,7 @@ phases:
             ParameterKey=SocketApiCertArn,ParameterValue=$SOCKETAPI_CERT_ARN \
             ParameterKey=SocketApiName,ParameterValue=$STACK-$ENVIRONMENT-SocketApi \
           --no-confirm-changeset \
+          --disable-rollback \
           --no-fail-on-empty-changeset \
           --resolve-s3 \
-          --resolve-image-repos \
-          --disable-rollback
+          --resolve-image-repos
