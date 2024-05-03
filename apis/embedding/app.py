@@ -66,7 +66,7 @@ def handle_uploaded_file_success(filename, file_path, source_column):
     with app.app_context():
         output = insert_data_into_vector_db(file_path, source_column)
         s3_url = upload_to_s3(filename, file_path)
-        user_file = UserFiles(file_name=filename, embedded=True, s3_url=s3_url)
+        user_file = UserFiles(file_name=file_path, embedded=True, s3_url=s3_url)
         db.session.add(user_file)
         db.session.commit()
         return {"message": output, "s3_url": s3_url}
