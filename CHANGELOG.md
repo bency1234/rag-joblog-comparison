@@ -9,9 +9,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Sprint 34 - Apr 22 - May 03
 
+### Fixed
+- [AI-09] - To pass the client and connection id in the streaming 
+
+### Added
+- Updated code from dev to master
+
 ### Added
 [AI-09]
-- Code changes on streamming to get the citation in chatbot response
+- Code changes on streaming to get the citation in chatbot response
 - updated the chat interface prompt 
 
 ### Added
