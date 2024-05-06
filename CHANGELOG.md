@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Sprint 34 - Apr 22 - May 03
 
+
+### Fixed
+- Updated code in embeddings to store in tmp folder
 ### Fixed
 [AI-14]
 - Updated file handling to use file paths instead of filenames for database storage.
