@@ -79,7 +79,9 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
         text = load_and_split_md(file_path)
 
     elif FORMAT == "pdf":
-        logger.info("PDF Splitted ------------------------------->>>>>>>>>>>>>>>>>>>>@@@@@@@@@@@@@@@@@@@@@@@@@")
+        logger.info(
+            "PDF Splitted ------------------------------->>>>>>>>>>>>>>>>>>>>@@@@@@@@@@@@@@@@@@@@@@@@@"
+        )
         text = load_and_split_pdf(file_path)
 
     elif FORMAT in ["docx"]:
@@ -99,7 +101,9 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
             collection_name=COLLECTION_NAME,
             connection_string=CONNECTION_STRING,
         )
-        logger.info(f"{len(split_docs)} documents inserted into the database ------------------------------------>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        logger.info(
+            f"{len(split_docs)} documents inserted into the database ------------------------------------>>>>>>>>>>>>>>>>>>>>>>>>>>"
+        )
         return split_docs
     return False
 
