@@ -17,6 +17,9 @@ from werkzeug.utils import secure_filename
 
 app = get_app(db)
 
+BASE_DIR = os.path.abspath("/tmp")
+
+
 
 def calculate_file_hash(filename):
     hasher = hashlib.sha256()
@@ -63,10 +66,14 @@ def handle_csv_file(event):
 
 
 def handle_uploaded_file_success(filename, file_path, source_column):
+    logger.info("....................................========================================================================")
     with app.app_context():
         output = insert_data_into_vector_db(file_path, source_column)
+        logger.info("Output --------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         s3_url = upload_to_s3(filename, file_path)
+        logger.info("se url ------------------------------------------------>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         user_file = UserFiles(file_name=file_path, embedded=True, s3_url=s3_url)
+        print("USER FILE==============>",user_file)
         db.session.add(user_file)
         db.session.commit()
         return {"message": output, "s3_url": s3_url}
@@ -86,6 +93,7 @@ def handle_valid_file(event, safe_filename, file_path, file_content):
     logger.info(f"file_content................{file_content}")
     file_format = safe_filename.split(".")[-1]
     if file_format in ALLOWED_EXTENSIONS:
+        logger.info("--------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>-------------------------")
         with open(file_path, "wb") as file:
             file.write(file_content)
         handle_uploaded_file_success(safe_filename, file_path, None)
@@ -101,13 +109,29 @@ class InvalidFilePath(Exception):
         super().__init__(message)
 
 
+# def path_traversal_check(file_name):
+#     error = None
+#     if os.path.dirname(file_name) != "":
+#         error = "Access denied: Attempted path traversal"
+#     file_path = file_name
+#     return file_path, error
+
 def path_traversal_check(file_name):
     error = None
-    if os.path.dirname(file_name) != "":
+    sanitized_file_name = secure_filename(file_name)
+    if os.path.dirname(sanitized_file_name) != "":
         error = "Access denied: Attempted path traversal"
-    file_path = file_name
-    return file_path, error
+        return None, error  # Return None for file path
 
+    # Use os.path.join for constructing paths
+    file_path = os.path.join(BASE_DIR, sanitized_file_name)
+    real_path = os.path.abspath(file_path)
+
+    if not real_path.startswith(os.path.abspath(BASE_DIR)):
+        error = "Access denied: Attempted path traversal"
+        return None, error  # Return None for file path
+
+    return real_path, error
 
 def lambda_handler1(*args):
     event = args[0]
