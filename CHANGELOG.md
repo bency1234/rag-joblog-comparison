@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+### Sprint 35 - May 06 - May 17
+
+### Added
+- [AI-18] - Added app.app_context() to get citation
 
 ### Sprint 34 - Apr 22 - May 03
 
