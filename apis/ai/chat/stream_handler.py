@@ -49,9 +49,7 @@ class AWSStreamHandler(BaseCallbackHandler):
         def __init__(self, client=None, connection_id=None):
             self.client = client
             self.connection_id = connection_id
-            self.text = ""
             self.sources = ""
-            self.stop_streaming = False
             self.is_streaming = False
             self.streamed_content = ""
             self.seen_s3_urls = set()
