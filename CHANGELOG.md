@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Sprint 34 - Apr 22 - May 03
 
 ### Fixed
+[AI-20]
+- Implemented fix for empty message log and inability to recall previous conversations.
+- Also Updated the Prompt to Respond with a summary of previous interactions
+
+### Fixed
 [AI-14]
 - Updated file handling to use file paths instead of filenames for database storage.
 - Updated MAX_CHUNK_OVERLAP parameter to 200
