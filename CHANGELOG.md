@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Sprint 35 - May 06 - May 17
 
 ### Added
+- [AI-18] - Added code to get store the s3 url while embedding the document and use that as citation
+          - Prompt Update to get the s3 url
+
+### Added
 - [AI-18] - Added app.app_context() to get citation
 
 ### Sprint 34 - Apr 22 - May 03

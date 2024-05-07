@@ -14,8 +14,8 @@ PROMPT = """
     • This is the first item in the list.
 
     **Sources**: 
-    - [Exact_File_Name_1](Exact_File_Name_1),
-    - [Exact_File_Name_2](Exact_File_Name_2)
+    - [Exact_File_Name_1](s3 url),
+    - [Exact_File_Name_2](s3 url)
     ---
     Example:
     ---
@@ -27,8 +27,8 @@ PROMPT = """
     • Exact_File_Name_1: The document includes details about...
     • Exact_File_Name_2: In this file, you'll find information on...
     **Sources**:
-    1. [Exact_File_Name_1](Exact_File_Name_1),
-    2. [Exact_File_Name_2](Exact_File_Name_2),
+    1. [Exact_File_Name_1](s3 url),
+    2. [Exact_File_Name_2](s3 url),
     ---
 
     Note:
