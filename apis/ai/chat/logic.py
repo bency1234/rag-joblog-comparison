@@ -16,7 +16,6 @@ from ai.llms.openaillm import ChatOpenAILLMProvider
 from ai.prompts.system_prompt import PROMPT
 from common.envs import logger
 from langchain.chains import RetrievalQAWithSourcesChain
-from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -40,29 +39,17 @@ class GenerateResponse:
     @time_it
     def chat_completion(self, user_input, message_log, client_id, connection_id):
         logger.info(f"user input......{user_input}")
-        system_template = (
-            PROMPT(user_input)
-            + """
-        Human: {question}
-        chat_history: {chat_history}
-        Bot: {summaries}
-        ----------------
-        """
-        )
+        human_template = "{question}"
+        system_template = PROMPT
         logger.info(f"system template...........{system_template}")
         messages = [
             SystemMessagePromptTemplate.from_template(system_template),
         ]
-        raw_messages = []
-        window_memory = ConversationBufferWindowMemory(
-            memory_key="chat_history", k=2, output_key="answer", input_key="question"
-        )
         for human, ai in pairwise(message_log):
-            window_memory.chat_memory.add_user_message(human)
-            window_memory.chat_memory.add_ai_message(ai)
-            raw_messages.append(HumanMessage(human))
-            raw_messages.append(AIMessage(ai))
-        messages.append(HumanMessagePromptTemplate.from_template("{question}"))
+            messages.append(HumanMessage(content=human))
+            messages.append(AIMessage(content=ai))
+
+        messages.append(HumanMessagePromptTemplate.from_template(human_template))
 
         prompt = ChatPromptTemplate.from_messages(messages)
         chain_type_kwargs = {"prompt": prompt}
@@ -82,7 +69,6 @@ class GenerateResponse:
             ),
             chain_type_kwargs=chain_type_kwargs,
             return_source_documents=True,
-            memory=window_memory,
         )
         chain_response = chain(user_input)
         logger.info(f"COMPLETE RESPONSE {chain_response}")
