@@ -41,9 +41,12 @@ def upload_to_s3(filename, file_path):
     bucket_name = get_secret_value_from_secret_manager("BUCKET_NAME")
     cloudfront_url = get_secret_value_from_secret_manager("CLOUDFRONT_URL")
     s3 = boto3.client("s3")
+    logger.info(f"Uploading {filename} to S3")
     s3_object_key = f"{datetime.now().strftime('%Y-%m-%d')}/{filename}"
+
     s3.upload_file(file_path, bucket_name, s3_object_key)
     s3_url = f"{cloudfront_url}/{s3_object_key}"
+
     return s3_url
 
 
@@ -64,8 +67,8 @@ def handle_csv_file(event):
 
 def handle_uploaded_file_success(filename, file_path, source_column):
     with app.app_context():
-        output = insert_data_into_vector_db(file_path, source_column)
         s3_url = upload_to_s3(filename, file_path)
+        output = insert_data_into_vector_db(file_path, s3_url, source_column)
         user_file = UserFiles(file_name=file_path, embedded=True, s3_url=s3_url)
         db.session.add(user_file)
         db.session.commit()
