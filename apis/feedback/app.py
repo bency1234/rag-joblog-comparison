@@ -51,13 +51,14 @@ def update_feedback(id, feedback, text):
 
     with app.app_context():
         feedback_data = db.session.query(Feedback).filter_by(exchange_id=id).first()
-
+        # If the record doesn't exist
         if feedback_data is None:
             new_feedback = Feedback(
                 exchange_id=id, response_status=feedback, feedback=text
             )
             db.session.add(new_feedback)
         else:
+            # If the record exists, update its feedback fields
             feedback_data.response_status = feedback
             if text is not None:
                 validate_text = validate_feedback(text)
