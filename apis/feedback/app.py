@@ -10,6 +10,9 @@ app = get_app(db)
 
 
 def validate_feedback(feedback_text):
+    if not isinstance(feedback_text, str):
+        feedback_text = "-"
+        return feedback_text
     # Trim leading and trailing whitespace
     sanitized_feedback = feedback_text.strip()
 
@@ -48,7 +51,6 @@ def update_feedback(id, feedback, text):
 
     with app.app_context():
         feedback_data = db.session.query(Feedback).filter_by(exchange_id=id).first()
-
         if feedback_data is None:
             # If the record doesn't exist
             new_feedback = Feedback(
@@ -71,7 +73,6 @@ def update_feedback(id, feedback, text):
 def handle_user_feedback(*args):
     event = args[0]
     data = get_event_data(event)
-
     try:
         if ("id" not in data) and ("feedback" not in data):
             return {
