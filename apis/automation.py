@@ -68,11 +68,9 @@ data_dict = {}
 for sheet_name in xls.sheet_names:
     df = pd.read_excel(xls, sheet_name=sheet_name)
 
-    visit_the_website(HOST, driver, wait)
-    text = driver.find_element_by_id("exampleInputEmail1")
-    text.send_keys("bitcot")
+    visit_the_website(HOST, driver)
     if not LOGGED_IN:
-        fill_user_info(driver, wait)
+        fill_user_info(wait)
         LOGGED_IN = True
 
     driver.implicitly_wait(20)
