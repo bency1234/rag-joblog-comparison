@@ -1,0 +1,10 @@
+NAME_SELECTOR = "exampleInputName"
+EMAIL_SELECTOR = "exampleInputEmail1"
+AGREEMENT_CHECKBOX = "label[for='AgreeInputCheckbox']"
+SUBMIT_FORM = ".agree_btn"
+CHAT_WITH_US_BTN = ".App button"
+THINGS_YOU_SHOULD_KNOW = "div.terms_conditon_scroll"
+TERMS_BTN_AGREE = ".terms_agree_btn"
+RESPONSE_CONTAINER = 'span[class*="bot_span"]'
+TEXT_AREA = "#myTextArea"
+FEEDBACK_ICON = ".btc_feedback_link"
