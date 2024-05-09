@@ -52,7 +52,7 @@ def handle_system_error(user_input, client, connection_id):
 
 
 def get_user_input(request):
-    user_input = request["message"]["user_input"].strip()
+    user_input = request.get(ChatAPIRequestParameters.USER_INPUT.value, "H").strip()
     continue_chat = request.get(ChatAPIRequestParameters.CONTINUE_CHAT.value, False)
     return "Please continue" if continue_chat else user_input
 
@@ -131,7 +131,6 @@ def handle_user_query(request, client=None, connection_id=None):
         )
 
         if valid_query:
-            print(valid_query)
             message_log.append(user_input)
             message_log.append(bot_response)
 

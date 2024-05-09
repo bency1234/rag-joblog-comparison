@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Revised the prompt to ensure correct hyperlink formatting in the "Sources" section and adjusted phrasing for responding to queries with minimal details.
+- Updated  file_name_with_spaces to replace gaps with "-"
 
 ### Added
 - [AI-18] - Added code to get store the s3 url while embedding the document and use that as citation
