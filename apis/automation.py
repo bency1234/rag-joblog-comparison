@@ -39,7 +39,7 @@ LOGGED_IN = False
 
 
 driver = webdriver.Chrome(
-    "/home/andrea/.cache/selenium/chromedriver/linux64/124.0.6367.155/chromedriver"
+    service=ChromeService(ChromeDriverManager().install())
 )  # Change this to the WebDriver you downloaded
 # If you are getting issues with chrome driver, please download the chrome driver from https://googlechromelabs.github.io/chrome-for-testing/#stable and uncomment below code
 # driver = webdriver.Chrome(executable_path='./chromedriver')
@@ -68,9 +68,9 @@ data_dict = {}
 for sheet_name in xls.sheet_names:
     df = pd.read_excel(xls, sheet_name=sheet_name)
 
-    # visit_the_website(HOST, driver, wait)
-    # text=driver.find_element_by_id("exampleInputEmail1")
-    # text.send_keys("bitcot")
+    visit_the_website(HOST, driver, wait)
+    text = driver.find_element_by_id("exampleInputEmail1")
+    text.send_keys("bitcot")
     if not LOGGED_IN:
         fill_user_info(driver, wait)
         LOGGED_IN = True

@@ -45,68 +45,44 @@ def visit_the_website(host, driver, wait, retries=3, delay=10):
 
 
 def fill_user_info(driver, wait):
-    username_field = driver.find_element(By.XPATH, '//*[@id="exampleInputEmail1"]')
-    username_field.send_keys(
-        "bitcot"
-    )  # Replace "username" with the ID of your username input field
+    # username_field = driver.find_element(By.XPATH, '//*[@id="exampleInputEmail1"]')
+    # username_field.send_keys(
+    #     "bitcot"
+    # )  # Replace "username" with the ID of your username input field
 
-    password_field = driver.find_element(
-        By.XPATH, '//*[@id="exampleInputName"]'
-    )  # Replace "password" with the ID of your password input field
-    password_field.send_keys("123")
+    # password_field = driver.find_element(
+    #     By.XPATH, '//*[@id="exampleInputName"]'
+    # )  # Replace "password" with the ID of your password input field
+    # password_field.send_keys("123")
 
-    login_button = driver.find_element(
-        By.XPATH, '//*[@id="root"]/div/div[2]/div[1]/div/div/form/div/button'
-    )  # Replace "submitButton" with the ID or XPath of your login button
-    login_button.click()
+    # login_button = driver.find_element(
+    #     By.XPATH, '//*[@id="root"]/div/div[2]/div[1]/div/div/form/div/button'
+    # )  # Replace "submitButton" with the ID or XPath of your login button
+    # login_button.click()
 
+    username = wait.until(EC.element_to_be_clickable((By.ID, "exampleInputEmail1")))
+    username.send_keys("bitcot")
+    password = wait.until(EC.element_to_be_clickable((By.ID, EMAIL_SELECTOR)))
+    password.send_keys(EMAIL)
+    driver.find_element(By.CSS_SELECTOR, AGREEMENT_CHECKBOX).click()
+    driver.find_element(By.CSS_SELECTOR, SUBMIT_FORM).click()
+    scrollable_feed = wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, THINGS_YOU_SHOULD_KNOW))
+    )
+    # Use JavaScript to scroll
+    driver.execute_script(
+        "arguments[0].scrollTop = arguments[0].scrollHeight", scrollable_feed
+    )
+    terms_btn = wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, TERMS_BTN_AGREE))
+    )
+    terms_btn.click()
+    EC.text_to_be_present_in_element(
+        (By.CSS_SELECTOR, "div[class*=chat_header] h4"), "syed-test"
+    )
+    time.sleep(5)
 
-#     username_input = WebDriverWait(driver, 5).until(
-#     EC.element_to_be_clickable((By.ID, "exampleInputEmail1"))
-# )
-#     username_input.clear()
-
-# # Input the username
-#     username_input.send_keys("bitcot")
-#     #username_input = driver.find_element_by_id('exampleInputEmail1').send_keys("bitcot") #driver.find_element(By.XPATH, '//*[@id="exampleInputEmail1"]')
-
-# #     username_input = WebDriverWait(driver, 10).until(
-# #     EC.element_to_be_clickable((By.ID, "exampleInputEmail1"))
-# # )
-# #     username_input = WebDriverWait(driver, 10).until(
-# #     EC.element_to_be_clickable((By.XPATH, '//*[@id="exampleInputEmail1"]'))
-# # )
-#     #password_input = wait.until(EC.presence_of_element_located((By.ID, "Password ")))
-
-#     # Clear any existing text in the fields
-#     #username_input.clear()
-#     #password_input.clear()
-
-#     # Input the desired username and password
-
-#     #password_input.send_keys("123")
-
-#     # Find and click the login button
-#     # login_button = wait.until(EC.element_to_be_clickable((By.ID, "login")))
-#     # login_button.click()
-#     # name = wait.until(EC.element_to_be_clickable((By.ID, NAME_SELECTOR)))
-#     # name.send_keys(NAME)
-#     # email = wait.until(EC.element_to_be_clickable((By.ID, EMAIL_SELECTOR)))
-#     # email.send_keys(EMAIL)
-#     # driver.find_element(By.CSS_SELECTOR, AGREEMENT_CHECKBOX).click()
-#     # driver.find_element(By.CSS_SELECTOR, SUBMIT_FORM).click()
-#     # scrollable_feed = wait.until(
-#     #     EC.element_to_be_clickable((By.CSS_SELECTOR, THINGS_YOU_SHOULD_KNOW))
-#     # )
-#     # # Use JavaScript to scroll
-#     # driver.execute_script(
-#     #     "arguments[0].scrollTop = arguments[0].scrollHeight", scrollable_feed
-#     # )
-#     # terms_btn = wait.until(
-#     #     EC.element_to_be_clickable((By.CSS_SELECTOR, TERMS_BTN_AGREE))
-#     # )
-#     # terms_btn.click()
-#     # EC.text_to_be_present_in_element(
-#     #     (By.CSS_SELECTOR, "div[class*=chat_header] h4"), "syed-test"
-#     # )
-#     #time.sleep(5)
+    # login_button = driver.find_element(
+    #     By.XPATH, '//*[@id="root"]/div/div[2]/div[1]/div/div/form/div/button'
+    # )  # Replace "submitButton" with the ID or XPath of your login button
+    # login_button.click()
