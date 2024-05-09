@@ -18,3 +18,5 @@ python-docx==0.8.11
 docx2txt==0.8
 textract==1.6.5
 openpyxl==3.1.2
+selenium==4.3.0
+webdriver-manager==4.0.1

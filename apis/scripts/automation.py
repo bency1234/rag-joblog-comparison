@@ -6,7 +6,8 @@ import time
 import pandas as pd
 import xlsxwriter
 from common.envs import logger
-from css_selectors import RESPONSE_CONTAINER
+from scripts.css_selectors import RESPONSE_CONTAINER
+from scripts.utils import fill_user_info, visit_the_website
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -15,7 +16,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from tqdm import tqdm
-from utils import fill_user_info, visit_the_website
 from webdriver_manager.chrome import ChromeDriverManager
 
 logger.info(f"XLSX Writer version - {xlsxwriter.__version__}")

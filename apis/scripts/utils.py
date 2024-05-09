@@ -1,16 +1,13 @@
+import os
 import time
 
-from css_selectors import (
-    USERNAME_ELEMENT, PASSWORD_ELEMENT, LOGIN_BTN
-)
+from scripts.css_selectors import LOGIN_BTN, PASSWORD_ELEMENT, USERNAME_ELEMENT
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 
-import time
-
-from selenium.webdriver.common.by import By
-
 # Initialize the WebDriver
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
 
 
 def visit_the_website(host, driver, retries=3, delay=10):
@@ -31,9 +28,8 @@ def fill_user_info(wait):
     username.send_keys("bitcot")
     password = wait.until(EC.element_to_be_clickable((By.ID, PASSWORD_ELEMENT)))
     password.send_keys("123")
-    
+
     login = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, LOGIN_BTN)))
     login.click()
-    
-    time.sleep(5)
 
+    time.sleep(5)
