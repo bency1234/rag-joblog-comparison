@@ -42,7 +42,7 @@ def upload_to_s3(filename, file_path):
     cloudfront_url = get_secret_value_from_secret_manager("CLOUDFRONT_URL")
     s3 = boto3.client("s3")
     logger.info(f"Uploading {filename} to S3")
-    file_name_with_spaces = filename.replace("_", "-")
+    file_name_with_spaces = filename.replace("_", "-").replace(" ", "-")
     logger.info(f"{file_name_with_spaces} Final renamed filename")
     s3_object_key = f"{datetime.now().strftime('%Y-%m-%d')}/{file_name_with_spaces}"
 
