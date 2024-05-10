@@ -6,12 +6,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+### Sprint 35 - May 06 - May 17
+### Added
+- [AI-23] -Fixed Thumbs-Up Feedback Submission Issue
+          -Increased the token limit 
+
+### Added
+- [AI-18] - Added code to get store the s3 url while embedding the document and use that as citation
+          - Prompt Update to get the s3 url
+
+### Added
+- [AI-18] - Added app.app_context() to get citation
 
 ### Sprint 34 - Apr 22 - May 03
 
 
 ### Fixed
 - Updated code in embeddings to store in tmp folder
+### Fixed
+[AI-20]
+- Implemented fix for empty message log and inability to recall previous conversations.
+- Also Updated the Prompt to Respond with a summary of previous interactions
+
 ### Fixed
 [AI-14]
 - Updated file handling to use file paths instead of filenames for database storage.

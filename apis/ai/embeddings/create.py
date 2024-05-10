@@ -37,7 +37,7 @@ pg_credentials = {
 }
 
 
-def fetch_data_from_source(file_path, source_column=None):
+def fetch_data_from_source(file_path, s3_url, source_column=None):
     """Get data from either PostgreSQL, or read a file based on FORMAT.
 
     Returns:
@@ -47,16 +47,17 @@ def fetch_data_from_source(file_path, source_column=None):
     error = ""
     try:
         logger.info("File Format Enabled")
-        split_docs = get_splits_of_different_types_of_format(file_path, source_column)
+        split_docs = get_splits_of_different_types_of_format(
+            file_path, s3_url, source_column
+        )
         logger.info(f"file_path.................{file_path}")
     except Exception as ex:
         logger.error(f"Failed to fetch data: {ex}")
         error = str(ex)
-        logger.info("error occured here --------------------->>>>>>>>>>>>>>>>")
     return split_docs, error
 
 
-def get_splits_of_different_types_of_format(file_path, source_column=None):
+def get_splits_of_different_types_of_format(file_path, s3_url, source_column=None):
     """Function that processes different file formats and splits their content.
 
     Returns:
@@ -68,7 +69,7 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
     logger.info(f"FORMAT.................{FORMAT}")
 
     def split_text_unstructured(text):
-        document = Document(page_content=str(text), metadata={"source": file_path})
+        document = Document(page_content=str(text), metadata={"source": s3_url})
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=CHUNK_SIZE_LIMIT,
             chunk_overlap=MAX_CHUNK_OVERLAP,
@@ -79,9 +80,7 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
         text = load_and_split_md(file_path)
 
     elif FORMAT == "pdf":
-        logger.info(
-            "PDF Splitted ------------------------------->>>>>>>>>>>>>>>>>>>>@@@@@@@@@@@@@@@@@@@@@@@@@"
-        )
+        logger.info("PDF Splitted")
         text = load_and_split_pdf(file_path)
 
     elif FORMAT in ["docx"]:
@@ -102,21 +101,20 @@ def get_splits_of_different_types_of_format(file_path, source_column=None):
             connection_string=CONNECTION_STRING,
         )
         logger.info(
-            f"{len(split_docs)} documents inserted into the database ------------------------------------>>>>>>>>>>>>>>>>>>>>>>>>>>"
+            f"{len(split_docs)} documents inserted into the database successfully."
         )
         return split_docs
     return False
 
 
-def insert_data_into_vector_db(file_path, source_column=None):
+def insert_data_into_vector_db(file_path, s3_url, source_column=None):
     """
     Main function to get data from the source, create embeddings, and insert them into the database.
     """
     output = None
     logger.info("Embedding Started...")
     logger.info(f"Collection Name: {COLLECTION_NAME}")
-    split_docs, err = fetch_data_from_source(file_path, source_column)
-    logger.info("err here -------------------------=================>>>>>>>>>>")
+    err = fetch_data_from_source(file_path, s3_url, source_column)
     if err:
         output = f"Embedding failed with the error - {err}"
         logger.error(output)

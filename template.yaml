@@ -107,6 +107,7 @@ Resources:
         Types:
           - "EDGE"
       SecurityPolicy: TLS_1_2
+    DependsOn: ApiDeployment
       
   RestApiBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
@@ -127,6 +128,7 @@ Resources:
       DomainNameConfigurations:
         - CertificateArn: !Ref SocketApiCertArn
           EndpointType: REGIONAL
+    DependsOn: SocketApi 
 
   SocketApiBasePathMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
