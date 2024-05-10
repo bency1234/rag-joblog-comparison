@@ -44,7 +44,7 @@ def upload_to_s3(filename, file_path):
     cloudfront_url = get_secret_value_from_secret_manager("CLOUDFRONT_URL")
     s3 = boto3.client("s3")
     logger.info(f"Uploading {filename} to S3")
-    file_name_with_spaces = filename.replace("_", "-")
+    file_name_with_spaces = filename.replace("_", "-").replace(" ", "-")
     logger.info(f"{file_name_with_spaces} Final renamed filename")
     s3_object_key = f"{datetime.now().strftime('%Y-%m-%d')}/{file_name_with_spaces}"
 
@@ -79,7 +79,7 @@ def handle_uploaded_file_success(filename, file_path, source_column):
         s3_url = upload_to_s3(filename, file_path)
         output = insert_data_into_vector_db(file_path, s3_url, source_column)
         user_file = UserFiles(file_name=file_path, embedded=True, s3_url=s3_url)
-        print("USER FILE==============>", user_file)
+        print("USER FILE", user_file)
         db.session.add(user_file)
         db.session.commit()
         return {"message": output, "s3_url": s3_url}
@@ -99,9 +99,7 @@ def handle_valid_file(event, safe_filename, file_path, file_content):
     logger.info(f"file_content................{file_content}")
     file_format = safe_filename.split(".")[-1]
     if file_format in ALLOWED_EXTENSIONS:
-        logger.info(
-            "--------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>-------------------------"
-        )
+        logger.info("Entered File Format")
         with open(file_path, "wb") as file:
             file.write(file_content)
         handle_uploaded_file_success(safe_filename, file_path, None)
@@ -115,14 +113,6 @@ def handle_valid_file(event, safe_filename, file_path, file_content):
 class InvalidFilePath(Exception):
     def __init__(self, message):
         super().__init__(message)
-
-
-# def path_traversal_check(file_name):
-#     error = None
-#     if os.path.dirname(file_name) != "":
-#         error = "Access denied: Attempted path traversal"
-#     file_path = file_name
-#     return file_path, error
 
 
 def path_traversal_check(file_name):
