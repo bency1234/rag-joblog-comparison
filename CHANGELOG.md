@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ### Sprint 35 - May 06 - May 17
+### Added
+- [AI-23] -Fixed Thumbs-Up Feedback Submission Issue
+          -Increased the token limit 
 
 ### Fixed
 - Revised the prompt to ensure correct hyperlink formatting in the "Sources" section and adjusted phrasing for responding to queries with minimal details.
