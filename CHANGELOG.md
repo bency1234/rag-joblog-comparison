@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Sprint 34 - Apr 22 - May 03
 
+
+### Fixed
+- Updated code in embeddings to store in tmp folder
 ### Fixed
 [AI-20]
 - Implemented fix for empty message log and inability to recall previous conversations.
