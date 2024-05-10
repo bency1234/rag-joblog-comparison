@@ -32,6 +32,7 @@ current_datetime = datetime.datetime.now()
 timestamp_str = current_datetime.strftime("%Y%m%d%H%M%S")
 
 INPUT_SHEET_PATH = os.getenv("INPUT_SHEET_PATH")
+URL = os.getenv("URL")
 file_name_without_extension = os.path.splitext(os.path.basename(INPUT_SHEET_PATH))[0]
 OUTPUT_SHEET_PATH = f"va_mtp_{file_name_without_extension}_{timestamp_str}.xlsx"
 
@@ -44,7 +45,7 @@ driver = webdriver.Chrome(
 # If you are getting issues with chrome driver, please download the chrome driver from https://googlechromelabs.github.io/chrome-for-testing/#stable and uncomment below code
 # driver = webdriver.Chrome(executable_path='./chromedriver')
 wait = WebDriverWait(driver, WAIT_TIMEOUT)
-driver.get("https://d22e4rw124x1ri.cloudfront.net/")
+driver.get(URL)
 
 
 def check_element_length(css_selector, length):
