@@ -25,9 +25,9 @@ def visit_the_website(host, driver, retries=3, delay=10):
 
 def fill_user_info(wait):
     username = wait.until(EC.element_to_be_clickable((By.ID, USERNAME_ELEMENT)))
-    username.send_keys("bitcot")
+    username.send_keys(USERNAME)
     password = wait.until(EC.element_to_be_clickable((By.ID, PASSWORD_ELEMENT)))
-    password.send_keys("123")
+    password.send_keys(PASSWORD)
 
     login = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, LOGIN_BTN)))
     login.click()
