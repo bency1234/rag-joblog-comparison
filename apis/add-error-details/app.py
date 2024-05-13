@@ -76,5 +76,6 @@ def add_error_details_in_db(event, db):
             }, HTTPStatus.INTERNAL_SERVER_ERROR.value
 
 
-def lambda_handler(event, context):
+def lambda_handler(*args):
+    event = args[0]
     return call_fn(add_error_details_in_db, event)
