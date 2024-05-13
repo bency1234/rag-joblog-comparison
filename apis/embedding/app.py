@@ -48,11 +48,26 @@ def upload_to_s3(filename, file_path):
     logger.info(f"{file_name_with_spaces} Final renamed filename")
     s3_object_key = f"{datetime.now().strftime('%Y-%m-%d')}/{file_name_with_spaces}"
 
+    file_extension = filename.split(".")[-1]
+    logger.info(f"Extension: {file_extension}")
+
+    if file_extension == "pdf":
+        logger.info("Entered pdf")
+        content_type = "application/pdf"
+
+    elif file_extension == "md":
+        logger.info("Entered md")
+        content_type = "text/markdown"
+
+    elif file_extension == "docx":
+        logger.info("Entered docx")
+        content_type = "application/octet-stream"
+
     s3.upload_file(
         file_path,
         bucket_name,
         s3_object_key,
-        ExtraArgs={"ContentType": "application/pdf"},
+        ExtraArgs={"ContentType": content_type},
     )
     s3_url = f"{cloudfront_url}/{s3_object_key}"
 
