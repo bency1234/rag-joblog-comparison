@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Sprint 35 - May 06 - May 17
 ### Added
+
+- To obtain content type for the extension that enables document viewing during citation.
+
 - [AI-23] -Fixed Thumbs-Up Feedback Submission Issue
           -Increased the token limit 
 
