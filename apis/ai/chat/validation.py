@@ -6,7 +6,7 @@ from ai.common.api_validations import (
 )
 
 
-def validate_user_input(user_input, message_log, time_stamp):
+def validate_user_input(user_input, message_log):
     """
     Validates user input against certain conditions and formats.
 

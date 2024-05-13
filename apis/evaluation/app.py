@@ -54,5 +54,6 @@ def get_feedback_evaluation(*args):
             }, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-def lambda_handler(event, context):
+def lambda_handler(*args):
+    event = args[0]
     return call_fn(get_feedback_evaluation, event)
