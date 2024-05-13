@@ -5,13 +5,11 @@ Take one user input at a time from an Excel sheet, pass it to the chatbot to get
 
 
 ### Add secrets
+Run the following command
 
-Create .env file and add the following variables with suitable values
-export HOST=""
-export INPUT_SHEET_PATH=""
-export USERNAME=""
-export PASSWORD=""
-export URL=""
+```bash
+cp example.env .env
+```
 
 ### Navigate to the project directory:
 cd scripts/
