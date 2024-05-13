@@ -74,10 +74,10 @@ def handle_csv_file(event):
     return column_name, error
 
 
-def handle_uploaded_file_success(filename, file_path, source_column):
+def handle_uploaded_file_success(filename, file_path):
     with app.app_context():
         s3_url = upload_to_s3(filename, file_path)
-        output = insert_data_into_vector_db(file_path, s3_url, source_column)
+        output = insert_data_into_vector_db(file_path, s3_url)
         user_file = UserFiles(file_name=file_path, embedded=True, s3_url=s3_url)
         print("USER FILE", user_file)
         db.session.add(user_file)
@@ -93,7 +93,7 @@ def validate_filename(filename):
     return re.match(r"^[a-zA-Z0-9_.-]+$", filename) is not None
 
 
-def handle_valid_file(event, safe_filename, file_path, file_content):
+def handle_valid_file(safe_filename, file_path, file_content):
     logger.info(f"safe_filename.....{safe_filename}")
     logger.info(f"file_path................{file_path}")
     logger.info(f"file_content................{file_content}")
@@ -102,7 +102,7 @@ def handle_valid_file(event, safe_filename, file_path, file_content):
         logger.info("Entered File Format")
         with open(file_path, "wb") as file:
             file.write(file_content)
-        handle_uploaded_file_success(safe_filename, file_path, None)
+        handle_uploaded_file_success(safe_filename, file_path)
         return {"status": True, "success": True}, HTTPStatus.OK.value
     else:
         return generate_bad_request_response(
@@ -160,7 +160,7 @@ def lambda_handler1(*args):
                 file_path, error = path_traversal_check(safe_filename)
                 if error:
                     return generate_bad_request_response(error)
-        return handle_valid_file(event, file_name, file_path, file_content)
+        return handle_valid_file(file_name, file_path, file_content)
     except Exception:
         import traceback
 
@@ -172,5 +172,6 @@ def lambda_handler1(*args):
         secure_file_deletion(file_path)
 
 
-def lambda_handler(event, context):
+def lambda_handler(*args):
+    event = args[0]
     return call_fn(lambda_handler1, event)

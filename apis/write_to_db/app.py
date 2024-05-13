@@ -88,5 +88,6 @@ def write_to_db(*args):
         )
 
 
-def lambda_handler(event, context):
+def lambda_handler(*args):
+    event = args[0]
     return call_fn(write_to_db, event)
