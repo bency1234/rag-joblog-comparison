@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Updated code to fix the Sonar Issues
-   - Removed the unused function parameter "context"
-   - Remove the unused function parameter "time_stamp"
-   - Remove the unused function parameter "source_column"
+   - Utilized *args in lambda_handler to resolve the unused function parameter "context".
+   - Removed the unused function parameters "time_stamp" and "source_column".
+
 
 ### Added
 - [AI-23] -Fixed Thumbs-Up Feedback Submission Issue
