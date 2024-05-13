@@ -125,12 +125,10 @@ Resources:
     Type: AWS::ApiGatewayV2::DomainName
     Properties:
       DomainName: !Ref SocketApiDomain
-      CertificateArn: !Ref SocketApiCertArn
-      EndpointConfiguration:
-        Types:
-          - "REGIONAL"
-      SecurityPolicy: TLS_1_2
-    DependsOn: SocketApi 
+      DomainNameConfigurations:
+        - CertificateArn: !Ref SocketApiCertArn
+          EndpointType: REGIONAL
+    DependsOn: SocketApi
 
   SocketApiBasePathMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
