@@ -8,7 +8,6 @@ import xlsxwriter
 from common.envs import logger
 from scripts.constants import MAX_REQUESTS_PER_MINUTE, TIME_INTERVAL
 from scripts.css_selectors import RESPONSE_CONTAINER
-from scripts.utils import fill_user_info, visit_the_website
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -37,9 +36,6 @@ URL = os.getenv("URL")
 file_name_without_extension = os.path.splitext(os.path.basename(INPUT_SHEET_PATH))[0]
 OUTPUT_SHEET_PATH = f"joblog_{file_name_without_extension}_{timestamp_str}.xlsx"
 
-LOGGED_IN = False
-
-
 driver = webdriver.Chrome(
     service=ChromeService(ChromeDriverManager().install())
 )  # Change this to the WebDriver you downloaded
@@ -49,7 +45,9 @@ wait = WebDriverWait(driver, WAIT_TIMEOUT)
 driver.get(URL)
 
 
-def check_current_time(requests_in_current_minute, data_dict, start_time):
+def validating_timestamp_and_process_excel(
+    requests_in_current_minute, data_dict, start_time
+):
     records = df
     combined_df = pd.DataFrame(columns=SHEET_COLUMNS)
 
@@ -74,7 +72,7 @@ def check_current_time(requests_in_current_minute, data_dict, start_time):
                 requests_in_current_minute = 0
 
             # To pass the user input to the bot and get the response
-            response_df = user_input(row, index, skipped_rows)
+            response_df = fetch_user_input_and_get_response(row, index, skipped_rows)
             if response_df is not None:
                 combined_df = pd.concat([combined_df, response_df], ignore_index=True)
             # Increment the request counter for the current minute
@@ -87,7 +85,7 @@ def check_current_time(requests_in_current_minute, data_dict, start_time):
     return data_dict
 
 
-def user_input(row, index, skipped_rows):
+def fetch_user_input_and_get_response(row, index, skipped_rows):
     user_input = row["user_input"]
 
     if len(user_input) < 500:
@@ -148,6 +146,18 @@ def check_element_length(css_selector, length):
         elements = driver.find_elements(*selector)
 
 
+def store_response_in_excel(data_dict):
+    # Create an Excel writer
+    writer = pd.ExcelWriter(OUTPUT_SHEET_PATH, engine="xlsxwriter")
+
+    # Save each DataFrame in a separate sheet
+    for sheet_name, df in data_dict.items():
+        df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    # Close the writer to save the Excel file
+    writer.close()
+
+
 combined_df = pd.DataFrame()
 
 xls = pd.ExcelFile(INPUT_SHEET_PATH)
@@ -160,11 +170,6 @@ data_dict = {}
 for sheet_name in xls.sheet_names:
     df = pd.read_excel(xls, sheet_name=sheet_name)
 
-    visit_the_website(HOST, driver)
-    if not LOGGED_IN:
-        fill_user_info(wait)
-        LOGGED_IN = True
-
     # Initialize a counter to keep track of requests in the current minute
     requests_in_current_minute = 0
 
@@ -173,14 +178,8 @@ for sheet_name in xls.sheet_names:
 
     skipped_rows = 0
 
-    data_dict = check_current_time(requests_in_current_minute, data_dict, start_time)
+    data_dict = validating_timestamp_and_process_excel(
+        requests_in_current_minute, data_dict, start_time
+    )
 
-# Create an Excel writer
-writer = pd.ExcelWriter(OUTPUT_SHEET_PATH, engine="xlsxwriter")
-
-# Save each DataFrame in a separate sheet
-for sheet_name, df in data_dict.items():
-    df.to_excel(writer, sheet_name=sheet_name, index=False)
-
-# Close the writer to save the Excel file
-writer.close()
+store_response_in_excel(data_dict)
