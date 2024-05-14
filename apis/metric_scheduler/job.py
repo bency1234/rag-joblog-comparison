@@ -37,7 +37,7 @@ def get_chatbot_data_records(session, time_stamp_of_last_record):
     return query.all()
 
 
-def get_chatbot_feedback_records(session, time_stamp_of_last_record):
+def get_chatbot_feedback_records(time_stamp_of_last_record):
     """
     Retrieve chatbot feedback records from the database.
     Args:
@@ -81,9 +81,7 @@ def lambda_handler(event, context):
                 logger.info(f"Latest timestamp processed:{latest_time_stamp}")
             # Fetch new records since the last timestamp processed
             chatbot_data_records = get_chatbot_data_records(session, latest_time_stamp)
-            feedback_data_records = get_chatbot_feedback_records(
-                session, latest_time_stamp
-            )
+            feedback_data_records = get_chatbot_feedback_records(latest_time_stamp)
             # Check if there are new records to process
             if chatbot_data_records or feedback_data_records:
                 # This function will aggregate data only if there are new records since the last timestamp
