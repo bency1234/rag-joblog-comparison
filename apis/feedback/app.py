@@ -92,5 +92,6 @@ def handle_user_feedback(*args):
         }, HTTPStatus.INTERNAL_SERVER_ERROR.value
 
 
-def lambda_handler(event, context):
+def lambda_handler(*args):
+    event = args[0]
     return call_fn(handle_user_feedback, event)

@@ -6,8 +6,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-### Sprint 35 - May 06 - May 17
+
+
 ### Added
+- To obtain content type for the extension that enables document viewing during citation.
+
+### Fixed
+- Updated code to fix the Sonar Issues
+   - Utilized *args in lambda_handler to resolve the unused function parameter "context".
+   - Removed the unused function parameters "time_stamp" and "source_column".
+
 - [AI-23] -Fixed Thumbs-Up Feedback Submission Issue
           -Increased the token limit 
 
@@ -28,6 +36,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Sprint 34 - Apr 22 - May 03
 
+
+### Fixed
+- Updated code in embeddings to store in tmp folder
 ### Fixed
 [AI-20]
 - Implemented fix for empty message log and inability to recall previous conversations.

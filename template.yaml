@@ -128,7 +128,7 @@ Resources:
       DomainNameConfigurations:
         - CertificateArn: !Ref SocketApiCertArn
           EndpointType: REGIONAL
-    DependsOn: SocketApi 
+    DependsOn: SocketApi
 
   SocketApiBasePathMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
@@ -208,6 +208,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-restapi-access-logs'
+      RetentionInDays: 60
 
   SocketApiFunction:
     Type: AWS::Serverless::Function
@@ -234,6 +235,12 @@ Resources:
       FunctionName: !Ref SocketApiFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SocketApi}/Prod/*
+    
+  SocketApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${SocketApiFunction}'
+      RetentionInDays: 60
 
   SocketApi:
     Type: AWS::ApiGatewayV2::Api
@@ -286,6 +293,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-socketapi-access-logs'
+      RetentionInDays: 60
   ApiGatewayLoggingRole:
     Type: AWS::IAM::Role
     Properties:
@@ -336,6 +344,12 @@ Resources:
       Dockerfile: login.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+  LoginFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${LoginFunction}'
+      RetentionInDays: 60
+    
   
   FeedbackFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -365,6 +379,11 @@ Resources:
       Dockerfile: feedback.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+  FeedbackFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${FeedbackFunction}'
+      RetentionInDays: 60
 
   EmbeddingFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -388,6 +407,11 @@ Resources:
       Dockerfile: embedding.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+  EmbeddingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${EmbeddingFunction}'
+      RetentionInDays: 60
 
   WriteToDBFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -412,6 +436,11 @@ Resources:
       Dockerfile: write_to_db.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+  WriteToDBFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${WriteToDBFunction}'
+      RetentionInDays: 60
 
   AddErrorDetailsFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -435,6 +464,11 @@ Resources:
       Dockerfile: add-error-details.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+  AddErrorDetailsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AddErrorDetailsFunction}'
+      RetentionInDays: 60
 
   EvaluationFunction:
     Type: AWS::Serverless::Function
@@ -464,16 +498,11 @@ Resources:
       Dockerfile: evaluation.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
-    
-  # IAMAccessAnalyzer:
-  #   Type: AWS::AccessAnalyzer::Analyzer
-  #   Properties:
-  #     AnalyzerName: IAMAccessAnalyzer
-  #     Type: ACCOUNT
-  #     Tags:
-  #       - 
-  #         Key: Environment
-  #         Value: !Ref Environment
+  EvaluationFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${EvaluationFunction}'
+      RetentionInDays: 60    
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

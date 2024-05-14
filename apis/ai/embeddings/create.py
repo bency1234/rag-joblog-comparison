@@ -37,7 +37,7 @@ pg_credentials = {
 }
 
 
-def fetch_data_from_source(file_path, s3_url, source_column=None):
+def fetch_data_from_source(file_path, s3_url):
     """Get data from either PostgreSQL, or read a file based on FORMAT.
 
     Returns:
@@ -47,9 +47,7 @@ def fetch_data_from_source(file_path, s3_url, source_column=None):
     error = ""
     try:
         logger.info("File Format Enabled")
-        split_docs = get_splits_of_different_types_of_format(
-            file_path, s3_url, source_column
-        )
+        split_docs = get_splits_of_different_types_of_format(file_path, s3_url)
         logger.info(f"file_path.................{file_path}")
     except Exception as ex:
         logger.error(f"Failed to fetch data: {ex}")
@@ -57,7 +55,7 @@ def fetch_data_from_source(file_path, s3_url, source_column=None):
     return split_docs, error
 
 
-def get_splits_of_different_types_of_format(file_path, s3_url, source_column=None):
+def get_splits_of_different_types_of_format(file_path, s3_url):
     """Function that processes different file formats and splits their content.
 
     Returns:
@@ -80,6 +78,7 @@ def get_splits_of_different_types_of_format(file_path, s3_url, source_column=Non
         text = load_and_split_md(file_path)
 
     elif FORMAT == "pdf":
+        logger.info("PDF Splitted")
         text = load_and_split_pdf(file_path)
 
     elif FORMAT in ["docx"]:
@@ -99,18 +98,21 @@ def get_splits_of_different_types_of_format(file_path, s3_url, source_column=Non
             collection_name=COLLECTION_NAME,
             connection_string=CONNECTION_STRING,
         )
+        logger.info(
+            f"{len(split_docs)} documents inserted into the database successfully."
+        )
         return split_docs
     return False
 
 
-def insert_data_into_vector_db(file_path, s3_url, source_column=None):
+def insert_data_into_vector_db(file_path, s3_url):
     """
     Main function to get data from the source, create embeddings, and insert them into the database.
     """
     output = None
     logger.info("Embedding Started...")
     logger.info(f"Collection Name: {COLLECTION_NAME}")
-    err = fetch_data_from_source(file_path, s3_url, source_column)
+    err = fetch_data_from_source(file_path, s3_url)
     if err:
         output = f"Embedding failed with the error - {err}"
         logger.error(output)
@@ -123,7 +125,7 @@ def insert_data_into_vector_db(file_path, s3_url, source_column=None):
 
 def load_and_split_md(file_name):
     try:
-        loader = UnstructuredMarkdownLoader(f"./{file_name}", mode="single")
+        loader = UnstructuredMarkdownLoader(f"{file_name}", mode="single")
         text = loader.load_and_split()
         if text:
             logger.info(f"Text using UnstructuredWordDocumentLoader {text}")
@@ -137,7 +139,7 @@ def load_and_split_md(file_name):
 
 def load_and_split_pdf(file_name):
     try:
-        loader = PyPDFLoader(f"./{file_name}")
+        loader = PyPDFLoader(f"{file_name}")
         logger.info(f"Processing with PyPDFLoader{file_name}")
         text = loader.load_and_split()
         if text:
@@ -152,7 +154,7 @@ def load_and_split_pdf(file_name):
 
 def load_and_split_word(file_name):
     try:
-        loader = Docx2txtLoader(f"./{file_name}")
+        loader = Docx2txtLoader(f"{file_name}")
         text = loader.load_and_split()
         if text:
             logger.info(f"Text using UnstructuredWordDocumentLoader{text}")
