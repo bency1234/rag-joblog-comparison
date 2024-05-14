@@ -6,6 +6,7 @@ from http import HTTPStatus
 from common.app_utils import read_database_url_from_secret_manager
 from common.chatbot import ChatbotData, ChatbotMetrics, Feedback
 from common.db import db
+from common.envs import logger
 from flask import Flask, json
 from job_utils import create_session
 from sqlalchemy import func, or_
@@ -17,7 +18,6 @@ db.init_app(app)
 
 
 def get_chatbot_data_records(session, time_stamp_of_last_record):
-    print("get_chatbot_data")
     """
     Retrieve chatbot data records from the database.
     Args:
@@ -38,7 +38,6 @@ def get_chatbot_data_records(session, time_stamp_of_last_record):
 
 
 def get_chatbot_feedback_records(session, time_stamp_of_last_record):
-    print("feedback function")
     """
     Retrieve chatbot feedback records from the database.
     Args:
@@ -79,14 +78,12 @@ def lambda_handler(event, context):
             )
             latest_time_stamp = latest_entry.time_stamp if latest_entry else None
             if latest_time_stamp:
-                print(f"Latest timestamp processed: {latest_time_stamp}")
+                logger.info(f"Latest timestamp processed:{latest_time_stamp}")
             # Fetch new records since the last timestamp processed
             chatbot_data_records = get_chatbot_data_records(session, latest_time_stamp)
             feedback_data_records = get_chatbot_feedback_records(
                 session, latest_time_stamp
             )
-            print("1", chatbot_data_records)
-            print("2", feedback_data_records)
             # Check if there are new records to process
             if chatbot_data_records or feedback_data_records:
                 # This function will aggregate data only if there are new records since the last timestamp
@@ -95,9 +92,9 @@ def lambda_handler(event, context):
                 )
                 insert_aggregated_data(session, aggregated_data, latest_time_stamp)
                 session.commit()
-                print("New data processed and stored.")
+                logger.info("New data processed and stored.")
             else:
-                print("No new data to process.")
+                logger.infolo("No new data to process.")
             return {
                 "statusCode": HTTPStatus.OK.value,
                 "headers": {"Content-Type": "application/json"},
@@ -105,7 +102,7 @@ def lambda_handler(event, context):
             }
         except Exception as e:
             session.rollback()
-            print(f"Error processing data: {e}")
+            logger.info(f"Error processing data: {e}")
             return {
                 "statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value,
                 "headers": {"Content-Type": "application/json"},
@@ -160,7 +157,7 @@ def insert_aggregated_data(session, aggregated_data, latest_time_stamp):
         None
     """
     if not aggregated_data or aggregated_data["latest_created_at"] is None:
-        print("No new data to process.")
+        logger.info("No new data to process.")
         return
 
     # Proceed with insertion if latest_time_stamp is None or the new data timestamp is greater
@@ -181,8 +178,8 @@ def insert_aggregated_data(session, aggregated_data, latest_time_stamp):
         )
         session.add(new_record)
         session.commit()
-        print("New data inserted successfully.")
+        logger.info("New data inserted successfully.")
     else:
-        print(
+        logger.info(
             "No new data needs processing as it is not newer than the last processed data."
         )
