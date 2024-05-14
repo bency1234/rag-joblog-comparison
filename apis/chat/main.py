@@ -93,7 +93,7 @@ def handle_user_query(request, client=None, connection_id=None):
     ) = process_request(request)
 
     try:
-        validation_error = validate_user_input(user_input, message_log, time_stamp)
+        validation_error = validate_user_input(user_input, message_log)
         if validation_error:
             handle_validation_error(validation_error, client, connection_id)
             return
