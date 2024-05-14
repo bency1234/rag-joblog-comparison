@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
             - To always include extensions in the sources section
             - Updated the prompt in response to the received feedback, eliminating specific word count restrictions and certain notes and examples.
        - Updated  file_name_with_spaces to replace gaps with "-"
+       - Updated Token limit to 1000 due to Truncation Issues
 
 ### Added
 - [AI-18] - Added code to get store the s3 url while embedding the document and use that as citation
