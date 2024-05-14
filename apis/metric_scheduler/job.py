@@ -66,7 +66,7 @@ def get_chatbot_feedback_records(time_stamp_of_last_record):
     return query.group_by(Feedback.created_at).all()
 
 
-def lambda_handler(event, context):
+def lambda_handler(*args):
     with app.app_context():
         session = create_session()
         try:
