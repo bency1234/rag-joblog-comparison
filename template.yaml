@@ -205,11 +205,11 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SocketApi}/Prod/*
     
-  SocketApiLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${SocketApiFunction}-${AWS::StackName}'
-      RetentionInDays: 60
+  # SocketApiLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub '/aws/lambda/${SocketApiFunction}-${AWS::StackName}'
+  #     RetentionInDays: 60
 
   SocketApi:
     Type: AWS::ApiGatewayV2::Api
@@ -313,11 +313,11 @@ Resources:
       Dockerfile: login.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
-  LoginFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${LoginFunction}-${AWS::StackName}'
-      RetentionInDays: 60
+  # LoginFunctionLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub '/aws/lambda/${LoginFunction}-${AWS::StackName}'
+  #     RetentionInDays: 60
     
   FeedbackFunction:
     Type: AWS::Serverless::Function
@@ -347,11 +347,11 @@ Resources:
       Dockerfile: feedback.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
-  FeedbackFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${FeedbackFunction}-${AWS::StackName}'
-      RetentionInDays: 60
+  # FeedbackFunctionLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub '/aws/lambda/${FeedbackFunction}-${AWS::StackName}'
+  #     RetentionInDays: 60
 
   EmbeddingFunction:
     Type: AWS::Serverless::Function
@@ -375,11 +375,11 @@ Resources:
       Dockerfile: embedding.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
-  EmbeddingFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${EmbeddingFunction}-${AWS::StackName}'
-      RetentionInDays: 60
+  # EmbeddingFunctionLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub '/aws/lambda/${EmbeddingFunction}-${AWS::StackName}'
+  #     RetentionInDays: 60
 
   WriteToDBFunction:
     Type: AWS::Serverless::Function
@@ -403,11 +403,11 @@ Resources:
       Dockerfile: write_to_db.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
-  WriteToDBFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${WriteToDBFunction}-${AWS::StackName}'
-      RetentionInDays: 60
+  # WriteToDBFunctionLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub '/aws/lambda/${WriteToDBFunction}-${AWS::StackName}'
+  #     RetentionInDays: 60
 
   AddErrorDetailsFunction:
     Type: AWS::Serverless::Function
@@ -431,11 +431,11 @@ Resources:
       Dockerfile: add-error-details.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
-  AddErrorDetailsFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${AddErrorDetailsFunction}-${AWS::StackName}'
-      RetentionInDays: 60
+  # AddErrorDetailsFunctionLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub '/aws/lambda/${AddErrorDetailsFunction}-${AWS::StackName}'
+  #     RetentionInDays: 60
 
   EvaluationFunction:
     Type: AWS::Serverless::Function
@@ -465,11 +465,11 @@ Resources:
       Dockerfile: evaluation.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
-  EvaluationFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${EvaluationFunction}-${AWS::StackName}'
-      RetentionInDays: 60    
+  # EvaluationFunctionLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub '/aws/lambda/${EvaluationFunction}-${AWS::StackName}'
+  #     RetentionInDays: 60    
 
 Outputs:
   EmbeddingFunctionUrl:
