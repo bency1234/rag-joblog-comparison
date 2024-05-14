@@ -20,12 +20,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
           -Increased the token limit 
 
 ### Fixed
-- Fix - Prompt Updates
+- Prompt Updates
             - Revised the prompt to ensure proper formatting of hyperlinks within the "Sources" section and for addressing inquiries with minimal information.
             - To ensure consistency in the sources section to include complete and accurate sources
             - To always include extensions in the sources section
             - Updated the prompt in response to the received feedback, eliminating specific word count restrictions and certain notes and examples.
-       - Updated  file_name_with_spaces to replace gaps with "-"
+- Token Update
        - Updated Token limit to 1000 due to Truncation Issues
 
 ### Added
