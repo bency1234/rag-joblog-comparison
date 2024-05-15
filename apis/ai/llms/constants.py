@@ -28,6 +28,7 @@ class OpenAIChatLLM(Enum):
     GPT4_8K = ("gpt-4", 0.03, 0.06)
     GPT4_32k = ("gpt-4-32k", 0.06, 0.12)
     GPT4_TURBO = ("gpt-4-turbo-preview", 0.01, 0.03)
+    GPT_4o = ("gpt-4o", 0.005, 0.015)
 
 
 COST_PER_TOKENS = 1000
@@ -48,7 +49,7 @@ UNITS = 1000
 
 
 #################################  LLM Constants starts here #################################
-SYSTEM_MODEL, SYSTEM_INPUT_COST, SYSTEM_OUTPUT_COST = OpenAIChatLLM.GPT4_TURBO.value
+SYSTEM_MODEL, SYSTEM_INPUT_COST, SYSTEM_OUTPUT_COST = OpenAIChatLLM.GPT_4o.value
 #################################  LLM Constants ends here #################################
 
 #################################  Embeddings Constants starts here #################################
