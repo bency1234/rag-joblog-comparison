@@ -62,4 +62,5 @@ phases:
           --no-confirm-changeset \
           --no-fail-on-empty-changeset \
           --resolve-s3 \
+          --disable-rollback \
           --resolve-image-repos
