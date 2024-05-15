@@ -488,7 +488,7 @@ Resources:
         ScheduledEvent:
           Type: Schedule
           Properties:
-            Schedule: cron(*/2 * * * * *)
+            Schedule: cron(*/2 * * * ? *)
       Tags:
         Environment: !Ref Environment
         Function: "MetricScheduler-RestApi"
