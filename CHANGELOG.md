@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - [AI-32] - Implemented Metrics & Diagnostics Tracking
+
+### Added
+- Added Automation script to run chat interface
+
 ### Added
 - To obtain content type for the extension that enables document viewing during citation.
 
@@ -18,6 +22,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - [AI-23] -Fixed Thumbs-Up Feedback Submission Issue
           -Increased the token limit 
+
+### Fixed
+- Prompt Updates
+            - Revised the prompt to ensure proper formatting of hyperlinks within the "Sources" section and for addressing inquiries with minimal information.
+            - To ensure consistency in the sources section to include complete and accurate sources
+            - To always include extensions in the sources section
+            - Updated the prompt in response to the received feedback, eliminating specific word count restrictions and certain notes and examples.
+- Token Update
+       - Updated Token limit to 1000 due to Truncation Issues
 
 ### Added
 - [AI-18] - Added code to get store the s3 url while embedding the document and use that as citation
