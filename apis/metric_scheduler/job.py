@@ -1,87 +1,183 @@
+"""
+This script is to update the metrics in the chatbot_metrics table.
+"""
 from http import HTTPStatus
 
-from common.app_utils import get_app
-from common.chatbot import ChatbotData, EvaluationScores, Feedback
+from common.app_utils import read_database_url_from_secret_manager
+from common.chatbot import ChatbotData, ChatbotMetrics, Feedback
 from common.db import db
 from common.envs import logger
-from common.evaluate import evaluate_chatbot_data
-from common.lambda_utils import call_fn
-from sqlalchemy import update
+from flask import Flask, json
+from job_utils import create_session
+from sqlalchemy import func, or_
 
-app = get_app(db)
-
-
-def fetch_chat_data():
-    return ChatbotData.query.filter_by(is_evaluated=False).all()
-
-
-def fetch_all_feedback(chat_data):
-    # Extracts exchange_ids from chat_data to fetch all corresponding Feedback records
-    exchange_ids = [chat.id for chat in chat_data]
-    feedbacks = Feedback.query.filter(Feedback.exchange_id.in_(exchange_ids)).all()
-
-    # Creates a dictionary to map each exchange_id to its feedback
-    feedback_dict = {feedback.exchange_id: feedback.feedback for feedback in feedbacks}
-    return feedback_dict
+app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = read_database_url_from_secret_manager()
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db.init_app(app)
 
 
-# Stores the evaluation results in the database
-def store_evaluation(exchange_id, user_input, final_response, feedback, results):
-    evaluation_data = EvaluationScores(
-        exchange_id=exchange_id,
-        user_input=user_input,
-        final_response=final_response,
-        feedback=feedback,
-        faithfulness=results["faithfulness"],
-        answer_relevancy=results["answer_relevancy"],
-        context_utilization=results["context_utilization"],
+def get_chatbot_data_records(session, time_stamp_of_last_record):
+    """
+    Retrieve chatbot data records from the database.
+    Args:
+        session: The database session.
+        time_stamp_of_last_record: The timestamp of the last record.
+    Returns:
+        list: A list of chatbot data records.
+    """
+    query = session.query(
+        ChatbotData.id,
+        ChatbotData.response_time,
+        ChatbotData.created_at,
+        ChatbotData.exchange_cost,
     )
-    db.session.add(evaluation_data)
+    if time_stamp_of_last_record:
+        query = query.filter(ChatbotData.created_at > time_stamp_of_last_record)
+    return query.all()
 
 
-# Evaluates each chat entry and stores their IDs for bulk update
-def evaluate_responses_and_update(chat_data, feedback_dict):
-    chat_ids = []
-    for chat in chat_data:
-        feedback = feedback_dict.get(chat.id)
-        results = evaluate_chatbot_data(
-            chat.user_input, chat.final_response, chat.source_documents
+def get_chatbot_feedback_records(time_stamp_of_last_record):
+    """
+    Retrieve chatbot feedback records from the database.
+    Args:
+        session: The database session.
+        time_stamp_of_last_record: The timestamp of the last record.
+    Returns:
+        list: A list of chatbot feedback records.
+    """
+    query = db.session.query(
+        Feedback.created_at,
+        Feedback.exchange_id,
+        func.count()
+        .filter(
+            or_(
+                Feedback.response_status == "true",
+                Feedback.response_status == "pending",
+            )
         )
-        store_evaluation(
-            chat.id, chat.user_input, chat.final_response, feedback, results
-        )
-        chat_ids.append(chat.id)
-    return chat_ids
-
-
-def evaluate_response(*args):
-    with app.app_context():
-        try:
-            chat_data = fetch_chat_data()
-            if not chat_data:
-                return {"message": "No chat data to evaluate"}, HTTPStatus.OK
-            feedback_dict = fetch_all_feedback(chat_data)
-            chat_ids = evaluate_responses_and_update(chat_data, feedback_dict)
-            # Bulk update the is_evaluated flag for all evaluated chats
-            if chat_ids:
-                db.session.execute(
-                    update(ChatbotData)
-                    .where(ChatbotData.id.in_(chat_ids))
-                    .values(is_evaluated=True)
-                )
-            db.session.commit()
-
-            return {"message": "success"}, HTTPStatus.OK
-
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"An error occurred: {str(e)}", exc_info=True)
-            return {
-                "message": "An error occurred",
-                "errors": str(e),
-            }, HTTPStatus.INTERNAL_SERVER_ERROR
+        .label("response_accepted_count"),
+        func.count()
+        .filter(Feedback.response_status == "false")
+        .label("response_declined_count"),
+    )
+    if time_stamp_of_last_record:
+        query = query.filter(Feedback.created_at > time_stamp_of_last_record)
+    return query.group_by(Feedback.created_at).all()
 
 
 def lambda_handler(*args):
-    event = args[0]
-    return call_fn(evaluate_response, event)
+    with app.app_context():
+        session = create_session()
+        try:
+            # Fetch the latest timestamp already processed
+            latest_entry = (
+                session.query(ChatbotMetrics)
+                .order_by(ChatbotMetrics.time_stamp.desc())
+                .first()
+            )
+            latest_time_stamp = latest_entry.time_stamp if latest_entry else None
+            if latest_time_stamp:
+                logger.info(f"Latest timestamp processed:{latest_time_stamp}")
+            # Fetch new records since the last timestamp processed
+            chatbot_data_records = get_chatbot_data_records(session, latest_time_stamp)
+            feedback_data_records = get_chatbot_feedback_records(latest_time_stamp)
+            # Check if there are new records to process
+            if chatbot_data_records or feedback_data_records:
+                # This function will aggregate data only if there are new records since the last timestamp
+                aggregated_data = aggregate_all_data(
+                    chatbot_data_records, feedback_data_records
+                )
+                insert_aggregated_data(session, aggregated_data, latest_time_stamp)
+                session.commit()
+                logger.info("New data processed and stored.")
+            else:
+                logger.infolo("No new data to process.")
+            return {
+                "statusCode": HTTPStatus.OK.value,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({"response": "success"}),
+            }
+        except Exception as e:
+            session.rollback()
+            logger.info(f"Error processing data: {e}")
+            return {
+                "statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({"response": "failure", "error": str(e)}),
+            }
+
+
+def aggregate_all_data(chatbot_data_records, feedback_data_records):
+    aggregated_data = {
+        "exchange_count": 0,
+        "exchange_ids": [],
+        "response_accepted_count": 0,
+        "response_declined_count": 0,
+        "response_time": 0,
+        "exchange_cost": 0.0,
+        "latest_created_at": None,  # Initialize with None
+    }
+
+    latest_timestamp = None
+    for id, response_time, created_at, exchange_cost in chatbot_data_records:
+        aggregated_data["exchange_count"] += 1
+        aggregated_data["exchange_ids"].append(id)
+        aggregated_data["response_time"] += response_time
+        aggregated_data["exchange_cost"] += float(exchange_cost)
+        if not latest_timestamp or created_at > latest_timestamp:
+            latest_timestamp = created_at  # Update the latest timestamp
+
+    for (
+        created_at,
+        response_accepted_count,
+        response_declined_count,
+    ) in feedback_data_records:
+        aggregated_data["response_accepted_count"] += response_accepted_count
+        aggregated_data["response_declined_count"] += response_declined_count
+        if not latest_timestamp or created_at > latest_timestamp:
+            latest_timestamp = created_at  # Update the latest timestamp
+
+    aggregated_data[
+        "latest_created_at"
+    ] = latest_timestamp  # Assign the latest timestamp to the dictionary
+    return aggregated_data
+
+
+def insert_aggregated_data(session, aggregated_data, latest_time_stamp):
+    """
+    Insert aggregated data into the ChatbotMetrics table only if the data is newer based on the timestamp.
+    Args:
+        session (Session): Database session.
+        aggregated_data (dict): The aggregated data to insert.
+        latest_time_stamp (datetime): The timestamp of the last record processed.
+    Returns:
+        None
+    """
+    if not aggregated_data or aggregated_data["latest_created_at"] is None:
+        logger.info("No new data to process.")
+        return
+
+    # Proceed with insertion if latest_time_stamp is None or the new data timestamp is greater
+    if (
+        latest_time_stamp is None
+        or aggregated_data["latest_created_at"] > latest_time_stamp
+    ):
+        new_record = ChatbotMetrics(
+            exchange_count=aggregated_data["exchange_count"],
+            exchange_ids=",".join(map(str, aggregated_data["exchange_ids"])),
+            response_accepted_count=aggregated_data["response_accepted_count"],
+            response_declined_count=aggregated_data["response_declined_count"],
+            response_time=aggregated_data["response_time"],
+            exchange_cost=aggregated_data["exchange_cost"],
+            time_stamp=aggregated_data[
+                "latest_created_at"
+            ],  # Using the timestamp from the new data
+        )
+        session.add(new_record)
+        session.commit()
+        logger.info("New data inserted successfully.")
+    else:
+        logger.info(
+            "No new data needs processing as it is not newer than the last processed data."
+        )
