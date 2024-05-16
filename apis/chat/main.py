@@ -15,7 +15,7 @@ from ai.common.api_validations import (
 from ai.common.utils.debug import INITIAL_ROW
 from ai.common.utils.stream import construct_bot_response, stream_response
 from ai.vector.config import get_vector_store
-from common.envs import get_secret_value_from_secret_manager
+from common.envs import get_secret_value_from_secret_manager, logger
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -113,6 +113,13 @@ def handle_user_query(request, client=None, connection_id=None):
         )
 
         response_time = time.time() - start_time
+
+        if valid_query:
+            message_log.append(user_input)
+            message_log.append(bot_response)
+
+        message_log = message_log[-4:]
+
         record = [
             user_input,
             raw_prompt,
@@ -123,23 +130,18 @@ def handle_user_query(request, client=None, connection_id=None):
             json.dumps(message_log, indent=2),
             f"System Docs: {str(source_documents)},",
         ]
-
         row_id = call_write_to_db_api(record, None)
 
         stream_response(
             {ChatAPIResponseParameters.ID.value: row_id}, client, connection_id
         )
 
-        if valid_query:
-            message_log.append(user_input)
-            message_log.append(bot_response)
-
-        message_log = message_log[-4:]
         stream_response(
             {ChatAPIResponseParameters.MESSAGE_LOG.value: message_log},
             client,
             connection_id,
         )
 
-    except Exception:
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
         handle_system_error(user_input, client, connection_id)
