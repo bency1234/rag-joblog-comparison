@@ -48,7 +48,6 @@ def get_chatbot_feedback_records(time_stamp_of_last_record):
     """
     query = db.session.query(
         Feedback.created_at,
-        Feedback.exchange_id,
         func.count()
         .filter(
             or_(
@@ -92,7 +91,7 @@ def lambda_handler(*args):
                 session.commit()
                 logger.info("New data processed and stored.")
             else:
-                logger.infolo("No new data to process.")
+                logger.info("No new data to process.")
             return {
                 "statusCode": HTTPStatus.OK.value,
                 "headers": {"Content-Type": "application/json"},
