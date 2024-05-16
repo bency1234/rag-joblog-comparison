@@ -59,7 +59,9 @@ def get_user_input(request):
 
 def process_request(request):
     start_time = time.time()
-    user_input = get_user_input(request)
+    user_input = request["message"]["user_input"].strip()
+    toggle = request.get(ChatAPIRequestParameters.Toggle.value, "on")
+    # user_input = get_user_input(request)
     time_stamp = request.get(ChatAPIRequestParameters.TIME_STAMP.value, None)
     message_log = request.get(ChatAPIRequestParameters.MESSAGE_LOG.value, [])
 
@@ -68,11 +70,14 @@ def process_request(request):
         user_input,
         time_stamp,
         message_log,
+        toggle,
     )
 
 
 def handle_user_query(request, client=None, connection_id=None):
-    def process_response(user_input, message_log, vector_store, client, connection_id):
+    def process_response(
+        user_input, message_log, vector_store, client, connection_id, toggle
+    ):
         (
             valid_query,
             raw_prompt,
@@ -80,7 +85,7 @@ def handle_user_query(request, client=None, connection_id=None):
             source_documents,
             system_cost,
         ) = GenerateResponse(INITIAL_ROW, vector_store).main(
-            user_input, message_log, client, connection_id
+            user_input, message_log, client, connection_id, toggle
         )
 
         return valid_query, raw_prompt, bot_response, source_documents, system_cost
@@ -90,6 +95,7 @@ def handle_user_query(request, client=None, connection_id=None):
         user_input,
         time_stamp,
         message_log,
+        toggle,
     ) = process_request(request)
 
     try:
@@ -109,7 +115,7 @@ def handle_user_query(request, client=None, connection_id=None):
             source_documents,
             system_cost,
         ) = process_response(
-            user_input, message_log, vector_store, client, connection_id
+            user_input, message_log, vector_store, client, connection_id, toggle
         )
 
         response_time = time.time() - start_time

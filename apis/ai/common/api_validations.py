@@ -38,6 +38,7 @@ class ChatAPIRequestParameters(Enum):
     TIME_STAMP = "time_stamp"
     EMAIL = "email"
     USER_ID = "user_id"
+    Toggle = "toggle"
     CONTINUE_CHAT = CONTINUE_CHAT_STR
 
 
