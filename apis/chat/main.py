@@ -59,9 +59,8 @@ def get_user_input(request):
 
 def process_request(request):
     start_time = time.time()
-    user_input = request["message"]["user_input"].strip()
     toggle = request.get(ChatAPIRequestParameters.Toggle.value, "on")
-    # user_input = get_user_input(request)
+    user_input = get_user_input(request)
     time_stamp = request.get(ChatAPIRequestParameters.TIME_STAMP.value, None)
     message_log = request.get(ChatAPIRequestParameters.MESSAGE_LOG.value, [])
 
