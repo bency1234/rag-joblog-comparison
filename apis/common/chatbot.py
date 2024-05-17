@@ -19,6 +19,7 @@ class ChatbotData(db.Model):
     exchange_cost = db.Column(db.Numeric(5, 3))
     is_evaluated = db.Column(db.Boolean, default=False)
     time_stamp = db.Column(db.DateTime())
+    use_rag = db.Column(db.Text())
     created_at = db.Column(db.DateTime, default=func.now())
     updated_at = db.Column(db.DateTime, default=func.now(), onupdate=func.now())
 

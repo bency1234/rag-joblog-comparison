@@ -42,7 +42,8 @@ def write_to_db(*args):
             time_stamp,
             message_log,
             source_documents,
-        ] = record[:8]
+            toggle,
+        ] = record[:9]
 
         with app.app_context():
             chatbot_data = ChatbotData(
@@ -55,6 +56,7 @@ def write_to_db(*args):
                 user_id=user_id,
                 message_log=message_log,
                 source_documents=source_documents,
+                use_rag=toggle,
             )
             db.session.add(chatbot_data)
             db.session.commit()
