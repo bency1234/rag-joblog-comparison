@@ -31,6 +31,8 @@ def write_to_db(*args):
         data = get_event_data(event)
         record = data.get("record")
         user_id = data.get("user_id")
+        logger.info(f"Record: {record}")
+        logger.info(f"User ID: {user_id}")
         record = replace_quotes(record)
 
         [
@@ -58,6 +60,7 @@ def write_to_db(*args):
                 source_documents=source_documents,
                 use_rag=toggle,
             )
+            logger.info(f"Chatbot data: {chatbot_data}")
             db.session.add(chatbot_data)
             db.session.commit()
             row_id = chatbot_data.id

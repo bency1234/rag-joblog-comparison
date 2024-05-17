@@ -127,6 +127,7 @@ def handle_user_query(request, client=None, connection_id=None):
             time_stamp,
             json.dumps(message_log, indent=2),
             f"System Docs: {str(source_documents)},",
+            toggle,
         ]
 
         row_id = call_write_to_db_api(record, None)
