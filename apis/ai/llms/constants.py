@@ -69,6 +69,7 @@ SEARCH_KWARGS = {
 SEARCH_TYPE = "similarity_score_threshold"
 #################################  Embeddings Constants ends here #################################
 
+
 #################################  Toggle Constants starts here #################################
 ON = "on"
-################################  Toggle Constants starts here ##################################
+################################  Toggle Constants ends here ##################################
