@@ -52,6 +52,7 @@ def upload_to_s3(filename, file_path):
     logger.info(f"Extension: {file_extension}")
     # Get content type from CONTENT_TYPES dictionary
     content_type = CONTENT_TYPES.get(file_extension)
+    logger.info(f"Content Type: {content_type}")
     if not content_type:
         raise ValueError(
             f"Content type for file extension '{file_extension}' not found"
