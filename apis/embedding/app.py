@@ -49,10 +49,9 @@ def upload_to_s3(filename, file_path):
     logger.info(f"{file_name_with_spaces} Final renamed filename")
     s3_object_key = f"{datetime.now().strftime('%Y-%m-%d')}/{file_name_with_spaces}"
     file_extension = filename.split(".")[-1]
-    logger.info(f"Extension: {file_extension}")
     # Get content type from CONTENT_TYPES dictionary
     content_type = CONTENT_TYPES.get(file_extension)
-    logger.info(f"Content Type: {content_type}")
+    logger.info(f"Extension: {file_extension}, Content Type: {content_type}")
     if not content_type:
         raise ValueError(
             f"Content type for file extension '{file_extension}' not found"
