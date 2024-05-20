@@ -5,7 +5,6 @@ from ai.chat.utils import pairwise
 from ai.common.utils.cost import get_cost
 from ai.common.utils.debug import time_it
 from ai.llms.constants import (
-    ON,
     SEARCH_KWARGS,
     SEARCH_TYPE,
     SYSTEM_INPUT_COST,
@@ -40,23 +39,25 @@ class GenerateResponse:
 
     @time_it
     def chat_completion(
-        self, user_input, message_log, client_id, connection_id, toggle
+        self,
+        user_input: str,
+        message_log: str,
+        client_id: str,
+        connection_id: str,
+        use_rag: bool,
     ):
-        logger.info(f"user input......{user_input}")
-        logger.info(f"toggle........{toggle}")
+        logger.info(f"User input: {user_input}, Toggle: {use_rag}")
         human_template = "{question}"
+        system_template = (
+            TOGGLE_ON_SYSTEM_PROMPT if use_rag == True else TOGGLE_OFF_SYSTEM_PROMPT
+        )
+        messages = [
+            SystemMessagePromptTemplate.from_template(system_template)
+            if use_rag == True
+            else SystemMessage(content=system_template)
+        ]
+        logger.info(f"human_template: {human_template}, messages: {messages}")
 
-        if toggle == ON:
-            system_template = TOGGLE_ON_SYSTEM_PROMPT
-            messages = [
-                SystemMessagePromptTemplate.from_template(system_template),
-            ]
-            logger.info(f"system template...........{system_template}")
-        else:
-            system_template = TOGGLE_OFF_SYSTEM_PROMPT
-            messages = [
-                SystemMessage(content=system_template),
-            ]
         for human, ai in pairwise(message_log):
             messages.append(HumanMessage(content=human))
             messages.append(AIMessage(content=ai))
@@ -70,7 +71,7 @@ class GenerateResponse:
         ).configure_model(
             callbacks=[AWSStreamHandler(client_id, connection_id)], streaming=True
         )
-        if toggle == ON:
+        if use_rag == True:
             chain_type_kwargs = {"prompt": prompt}
             chain = RetrievalQAWithSourcesChain.from_chain_type(
                 llm=llm,
@@ -82,11 +83,8 @@ class GenerateResponse:
                 return_source_documents=True,
             )
             chain_response = chain(user_input)
-            logger.info(f"COMPLETE RESPONSE {chain_response}")
             response = chain_response["answer"].strip()
-            logger.info(f"response........{response}")
             source_documents = chain_response["source_documents"]
-            logger.info(f"Source Documents {source_documents}")
         else:
             chain = LLMChain(llm=llm, prompt=prompt)
             chain_response = chain({"question": user_input})
@@ -94,6 +92,10 @@ class GenerateResponse:
             response = chain_response["text"]
             logger.info(f"response........{response}")
             source_documents = []
+
+        logger.info(
+            f"Complete response: {chain_response}, Response: {response}, Source Documents: {source_documents}"
+        )
         raw_prompt = self.generate_raw_prompt(
             system_template, json.dumps(message_log, indent=2)
         )
@@ -110,13 +112,18 @@ class GenerateResponse:
         )
         return raw_prompt, response, source_documents, total_cost
 
-    def main(self, user_input, message_log, client_id, connection_id, toggle):
-        valid_query = True
+    def main(
+        self,
+        user_input: str,
+        message_log: str,
+        client_id: str,
+        connection_id: str,
+        use_rag: bool,
+    ):
         bot_response = ""
         raw_prompt, bot_response, source_documents, total_cost = self.chat_completion(
-            user_input, message_log, client_id, connection_id, toggle
+            user_input, message_log, client_id, connection_id, use_rag
         )
-        pattern = r"(sorry)"
-        if re.search(pattern, bot_response.lower()):
-            valid_query = False
+        valid_query = not re.search(r"(sorry)", bot_response.lower())
+        logger.info(f"Valid query: {valid_query}")
         return valid_query, raw_prompt, bot_response, source_documents, total_cost

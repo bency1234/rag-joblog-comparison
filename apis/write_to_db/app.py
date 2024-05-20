@@ -44,7 +44,7 @@ def write_to_db(*args):
             time_stamp,
             message_log,
             source_documents,
-            toggle,
+            use_rag,
         ] = record[:9]
 
         with app.app_context():
@@ -58,7 +58,7 @@ def write_to_db(*args):
                 user_id=user_id,
                 message_log=message_log,
                 source_documents=source_documents,
-                use_rag=toggle,
+                use_rag=use_rag,
             )
             logger.info(f"Chatbot data: {chatbot_data}")
             db.session.add(chatbot_data)
