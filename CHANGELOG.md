@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add prompt for toggle off prompt
 
 ### Added
+- Reformat code for adding content type
+
+### Fixed
+-Fixed the issue in Metrics & Diagnostics
+
+### Added
 - Updated tiktoken version due to updated model
 
 ### Added

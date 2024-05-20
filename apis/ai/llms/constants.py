@@ -68,3 +68,10 @@ SEARCH_KWARGS = {
 }
 SEARCH_TYPE = "similarity_score_threshold"
 #################################  Embeddings Constants ends here #################################
+# Define CONTENT_TYPES dictionary
+CONTENT_TYPES = {
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "md": "text/markdown",
+    # Add more file types if needed
+}
