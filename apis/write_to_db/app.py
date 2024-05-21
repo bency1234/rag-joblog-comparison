@@ -31,6 +31,8 @@ def write_to_db(*args):
         data = get_event_data(event)
         record = data.get("record")
         user_id = data.get("user_id")
+        logger.info(f"Record: {record}")
+        logger.info(f"User ID: {user_id}")
         record = replace_quotes(record)
 
         [
@@ -42,7 +44,8 @@ def write_to_db(*args):
             time_stamp,
             message_log,
             source_documents,
-        ] = record[:8]
+            use_rag,
+        ] = record[:9]
 
         with app.app_context():
             chatbot_data = ChatbotData(
@@ -55,7 +58,9 @@ def write_to_db(*args):
                 user_id=user_id,
                 message_log=message_log,
                 source_documents=source_documents,
+                use_rag=use_rag,
             )
+            logger.info(f"Chatbot data: {chatbot_data}")
             db.session.add(chatbot_data)
             db.session.commit()
             row_id = chatbot_data.id

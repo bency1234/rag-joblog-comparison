@@ -36,7 +36,6 @@ def handle_validation_error(validation_error, client, connection_id):
 
 
 def handle_system_error(user_input, client, connection_id):
-    # logging.error(f"System Error for user {user_id}: {traceback.format_exc().strip()}")
     error_details = (
         f"Error Line: {traceback.format_exc().strip()}",
         ErrorType.SystemError.value,
@@ -59,20 +58,23 @@ def get_user_input(request):
 
 def process_request(request):
     start_time = time.time()
+    use_rag = request.get(ChatAPIRequestParameters.Toggle.value, True)
     user_input = get_user_input(request)
     time_stamp = request.get(ChatAPIRequestParameters.TIME_STAMP.value, None)
     message_log = request.get(ChatAPIRequestParameters.MESSAGE_LOG.value, [])
-
     return (
         start_time,
         user_input,
         time_stamp,
         message_log,
+        use_rag,
     )
 
 
 def handle_user_query(request, client=None, connection_id=None):
-    def process_response(user_input, message_log, vector_store, client, connection_id):
+    def process_response(
+        user_input, message_log, vector_store, client, connection_id, use_rag
+    ):
         (
             valid_query,
             raw_prompt,
@@ -80,7 +82,7 @@ def handle_user_query(request, client=None, connection_id=None):
             source_documents,
             system_cost,
         ) = GenerateResponse(INITIAL_ROW, vector_store).main(
-            user_input, message_log, client, connection_id
+            user_input, message_log, client, connection_id, use_rag
         )
 
         return valid_query, raw_prompt, bot_response, source_documents, system_cost
@@ -90,6 +92,7 @@ def handle_user_query(request, client=None, connection_id=None):
         user_input,
         time_stamp,
         message_log,
+        use_rag,
     ) = process_request(request)
 
     try:
@@ -109,7 +112,7 @@ def handle_user_query(request, client=None, connection_id=None):
             source_documents,
             system_cost,
         ) = process_response(
-            user_input, message_log, vector_store, client, connection_id
+            user_input, message_log, vector_store, client, connection_id, use_rag
         )
 
         response_time = time.time() - start_time
@@ -129,6 +132,7 @@ def handle_user_query(request, client=None, connection_id=None):
             time_stamp,
             json.dumps(message_log, indent=2),
             f"System Docs: {str(source_documents)},",
+            use_rag,
         ]
         row_id = call_write_to_db_api(record, None)
 

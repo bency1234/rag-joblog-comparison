@@ -8,6 +8,7 @@ from http import HTTPStatus
 
 import boto3
 from ai.embeddings.create import insert_data_into_vector_db
+from ai.llms.constants import CONTENT_TYPES
 from common.app_utils import get_app
 from common.chatbot import UserFiles
 from common.db import db
@@ -47,21 +48,14 @@ def upload_to_s3(filename, file_path):
     file_name_with_spaces = filename.replace("_", "-").replace(" ", "-")
     logger.info(f"{file_name_with_spaces} Final renamed filename")
     s3_object_key = f"{datetime.now().strftime('%Y-%m-%d')}/{file_name_with_spaces}"
-
     file_extension = filename.split(".")[-1]
-    logger.info(f"Extension: {file_extension}")
-
-    if file_extension == "pdf":
-        logger.info("Entered pdf")
-        content_type = "application/pdf"
-
-    elif file_extension == "md":
-        logger.info("Entered md")
-        content_type = "text/markdown"
-
-    elif file_extension == "docx":
-        logger.info("Entered docx")
-        content_type = "application/octet-stream"
+    # Get content type from CONTENT_TYPES dictionary
+    content_type = CONTENT_TYPES.get(file_extension)
+    logger.info(f"Extension: {file_extension}, Content Type: {content_type}")
+    if not content_type:
+        raise ValueError(
+            f"Content type for file extension '{file_extension}' not found"
+        )
 
     s3.upload_file(
         file_path,
@@ -70,7 +64,6 @@ def upload_to_s3(filename, file_path):
         ExtraArgs={"ContentType": content_type},
     )
     s3_url = f"{cloudfront_url}/{s3_object_key}"
-
     return s3_url
 
 
