@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ### Fixed
+- Fix - Empty Message Log issue
+
+### Fixed
 - Fixed the issue in the toggle where the variable name received from the frontend was incorrect.
 
 ### Added
@@ -16,7 +19,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Reformat code for adding content type
 
-### Fixed
 -Fixed the issue in Metrics & Diagnostics
 
 ### Added
