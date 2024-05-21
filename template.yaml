@@ -128,6 +128,7 @@ Resources:
       DomainNameConfigurations:
         - CertificateArn: !Ref SocketApiCertArn
           EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
     DependsOn: SocketApi 
 
   SocketApiBasePathMapping:
