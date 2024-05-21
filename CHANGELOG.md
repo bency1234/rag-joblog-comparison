@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+### Fixed
+- Fixed the issue in the toggle where the variable name received from the frontend was incorrect.
+
 ### Added
 - Add toggle feature in code if toggle is on then get embedded data and if toggle is off then get response without rag
 - Add prompt for toggle off prompt

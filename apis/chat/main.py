@@ -15,7 +15,7 @@ from ai.common.api_validations import (
 from ai.common.utils.debug import INITIAL_ROW
 from ai.common.utils.stream import construct_bot_response, stream_response
 from ai.vector.config import get_vector_store
-from common.envs import get_secret_value_from_secret_manager
+from common.envs import get_secret_value_from_secret_manager, logger
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -58,10 +58,11 @@ def get_user_input(request):
 
 def process_request(request):
     start_time = time.time()
-    use_rag = request.get(ChatAPIRequestParameters.Toggle.value, True)
+    use_rag = request.get(ChatAPIRequestParameters.USE_RAG.value, True)
     user_input = get_user_input(request)
     time_stamp = request.get(ChatAPIRequestParameters.TIME_STAMP.value, None)
     message_log = request.get(ChatAPIRequestParameters.MESSAGE_LOG.value, [])
+    logger.info(f"request: {request}")
     return (
         start_time,
         user_input,
