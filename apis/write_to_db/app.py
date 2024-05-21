@@ -46,7 +46,7 @@ def write_to_db(*args):
             source_documents,
             use_rag,
         ] = record[:9]
-
+        logger.info(f"Record: {record}")
         with app.app_context():
             chatbot_data = ChatbotData(
                 user_input=user_input,

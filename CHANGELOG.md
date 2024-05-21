@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Fix - Empty Message Log issue
 
+### Fixed
+- Fixed the issue in the toggle where the variable name received from the frontend was incorrect.
+
 ### Added
 - Add toggle feature in code if toggle is on then get embedded data and if toggle is off then get response without rag
 - Add prompt for toggle off prompt
