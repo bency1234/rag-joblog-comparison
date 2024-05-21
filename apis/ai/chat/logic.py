@@ -41,9 +41,9 @@ class GenerateResponse:
     def chat_completion(
         self,
         user_input: str,
-        message_log: str,
-        client_id: str,
-        connection_id: str,
+        message_log: list,
+        client_id: None,
+        connection_id: None,
         use_rag: bool,
     ):
         logger.info(f"User input: {user_input}, Toggle: {use_rag}")
@@ -115,9 +115,9 @@ class GenerateResponse:
     def main(
         self,
         user_input: str,
-        message_log: str,
-        client_id: str,
-        connection_id: str,
+        message_log: list,
+        client_id: None,
+        connection_id: None,
         use_rag: bool,
     ):
         bot_response = ""
