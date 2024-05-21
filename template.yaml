@@ -392,10 +392,15 @@ Resources:
       DockerContext: apis/
       DockerTag: python3.10-v1
 
+  WriteToDBFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Stack}-${Environment}-WriteToDBFunction
+      RetentionInDays: 14  
+
   WriteToDBFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      
       PackageType: Image
       Architectures:
       - x86_64
@@ -411,10 +416,20 @@ Resources:
         Environment: !Ref Environment
         Function: "WritetoDBfunction-RestApi"
       Tracing: Active
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Ref WriteToDBFunctionLogGroup
     Metadata:
       Dockerfile: write_to_db.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+    DependsOn: WriteToDBFunctionLogGroup
+
+  AddErrorDetailsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Stack}-${Environment}-AddErrorDetailsFunction
+      RetentionInDays: 14  
 
   AddErrorDetailsFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -434,10 +449,14 @@ Resources:
         Environment: !Ref Environment
         Function: "AddErrordetailsfunction-RestApi"
       Tracing: Active
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Ref AddErrorDetailsLogGroup
     Metadata:
       Dockerfile: add-error-details.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+    DependsOn: AddErrorDetailsLogGroup
 
   EvaluationFunction:
     Type: AWS::Serverless::Function
