@@ -369,6 +369,12 @@ Resources:
       DockerContext: apis/
       DockerTag: python3.10-v1
 
+  EmbeddingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Stack}-${Environment}-EmbeddingFunctionLogGroup
+      RetentionInDays: 14  
+
   EmbeddingFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -391,6 +397,7 @@ Resources:
       Dockerfile: embedding.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+    DependsOn: EmbeddingFunctionLogGroup
 
   WriteToDBFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -458,6 +465,12 @@ Resources:
       DockerTag: python3.10-v1
     DependsOn: AddErrorDetailsLogGroup
 
+  EvaluationFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Stack}-${Environment}-EvaluationFunctionLogGroup
+      RetentionInDays: 14  
+
   EvaluationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -486,7 +499,7 @@ Resources:
       Dockerfile: evaluation.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
-
+    DependsOn: EvaluationFunctionLogGroup
 
 
     
@@ -499,6 +512,13 @@ Resources:
   #       - 
   #         Key: Environment
   #         Value: !Ref Environment
+
+  MetricSchedulerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Stack}-${Environment}-MetricSchedulerLogGroup
+      RetentionInDays: 14  
+
   MetricScheduler:
     Type: AWS::Serverless::Function
     Properties:
@@ -515,6 +535,7 @@ Resources:
         Dockerfile: metric.Dockerfile
         DockerContext: apis/
         DockerTag: python3.10-v1
+    DependsOn: MetricSchedulerLogGroup
 
         
 Outputs:
