@@ -530,7 +530,7 @@ Resources:
         ScheduledEvent:
           Type: Schedule
           Properties:
-            Schedule: cron(*/2 * * * ? *)
+            Schedule: cron(0 12 * * ? *)
     Metadata:
         Dockerfile: metric.Dockerfile
         DockerContext: apis/
