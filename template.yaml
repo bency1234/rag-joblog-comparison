@@ -30,7 +30,7 @@ Parameters:
     Description: Third Subnet ID for the Lambda function.
   SubnetFour:
     Type: String
-    Description: Third Subnet ID for the Lambda function.
+    Description: Fourth Subnet ID for the Lambda function.
   LambdaExecutionRole:
     Type: String
     Description: Arn of the Lambda Execution role
@@ -50,11 +50,10 @@ Parameters:
     Type: String
     Description: Socket API Name
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Api:
     BinaryMediaTypes:
-    - "*/*"
+      - "*/*"
 
   Function:
     Environment:
@@ -78,13 +77,10 @@ Globals:
         PASSWORD: ""
         ADMIN_USERNAME: ""
         ADMIN_PASSWORD: ""
-
-        
     Timeout: 180
     EphemeralStorage: 
       Size: 1024
     MemorySize: 1024
-    # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
     LoggingConfig:
       LogFormat: JSON
     VpcConfig:
@@ -95,39 +91,8 @@ Globals:
         - !Ref SubnetFour
       SecurityGroupIds:
         - !Ref SecurityGroup
-    
 
 Resources:
-
-  RestApiGatewayAccessLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-restapi-access-logs'
-      RetentionInDays: 14
-
-  ApiDeployment:
-    Type: AWS::Serverless::Api
-    Properties:
-      StageName: !Ref Environment
-      TracingEnabled: true
-      MinimumCompressionSize: 0
-      EndpointConfiguration:
-        Type: EDGE
-      AccessLogSetting: # Add this section
-        DestinationArn: !GetAtt RestApiGatewayAccessLogGroup.Arn
-        Format: >-
-          {"requestId":"$context.requestId", "ip": "$context.identity.sourceIp",
-          "caller":"$context.identity.caller",
-          "user":"$context.identity.user","requestTime":"$context.requestTime",
-          "eventType":"$context.eventType","routeKey":"$context.routeKey",
-          "status":"$context.status","connectionId":"$context.connectionId"}
-      #   - LoggingLevel: INFO
-      #     DataTraceEnabled: true
-      #     HttpMethod: '*'
-      #     ResourcePath: '/*'
-      #     MetricsEnabled: true
-
-
   RestApiCustomDomain:
     Type: AWS::ApiGateway::DomainName
     Properties:
@@ -138,31 +103,17 @@ Resources:
           - "EDGE"
       SecurityPolicy: TLS_1_2
     DependsOn: ApiDeployment
-      
+
   RestApiBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
       DomainName: !Ref RestApiDomain
       RestApiId: !Ref ApiDeployment
       Stage: !Ref Environment
-    DependsOn: 
+    DependsOn:
       - RestApiCustomDomain
+      - ApiDeployment
 
-    
-  SocketApi:
-    Type: AWS::ApiGatewayV2::Api
-    Properties:
-      Name: !Ref SocketApiName
-      ProtocolType: WEBSOCKET
-      RouteSelectionExpression: "$request.body.action"
-  
-  SocketApiLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref SocketApi]]
-      RetentionInDays: 14  
-
-  # # Add custom domain for Socket API
   SocketApiDomainName:
     Type: AWS::ApiGatewayV2::DomainName
     Properties:
@@ -171,7 +122,7 @@ Resources:
         - CertificateArn: !Ref SocketApiCertArn
           EndpointType: REGIONAL
           SecurityPolicy: TLS_1_2
-    DependsOn: SocketApi 
+    DependsOn: SocketApi
 
   SocketApiBasePathMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
@@ -179,29 +130,26 @@ Resources:
       ApiId: !Ref SocketApi
       DomainName: !Ref SocketApiDomain
       Stage: !Ref Stage
-    DependsOn: 
+    DependsOn:
       - SocketApiDomainName
+      - Stage
 
-
-
-
-  # MetricScheduler:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     PackageType: Image
-  #     Architectures:
-  #     - x86_64
-  #     Role: !Ref LambdaExecutionRole
-  #     Events:
-  #       ScheduledEvent:
-  #         Type: Schedule
-  #         Properties:
-  #           Schedule: cron(0/5 * ? * * *)
-  #   Metadata:
-  #       Dockerfile: metric.Dockerfile
-  #       DockerContext: apis/
-  #       DockerTag: python3.10-v1
-
+  ApiDeployment:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      TracingEnabled: true
+      MinimumCompressionSize: 0
+      EndpointConfiguration:
+        Type: EDGE
+      AccessLogSetting:
+        DestinationArn: !GetAtt RestApiGatewayAccessLogGroup.Arn
+        Format: >-
+          {"requestId":"$context.requestId", "ip": "$context.identity.sourceIp",
+          "caller":"$context.identity.caller",
+          "user":"$context.identity.user","requestTime":"$context.requestTime",
+          "eventType":"$context.eventType","routeKey":"$context.routeKey",
+          "status":"$context.status","connectionId":"$context.connectionId"}
 
   ApiGatewayCloudWatchLogsRole:
     Type: AWS::IAM::Role
@@ -227,7 +175,23 @@ Resources:
                   - logs:PutLogEvents
                 Resource: arn:aws:logs:*:*:*
 
+  RestApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-restapi-access-logs'
+      RetentionInDays: 14
 
+  SocketApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-socketapi-access-logs'
+      RetentionInDays: 14
+
+  SocketApiFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['/', ['/aws/lambda', !Ref SocketApi]]
+      RetentionInDays: 14  
 
   SocketApiFunction:
     Type: AWS::Serverless::Function
@@ -244,12 +208,7 @@ Resources:
       Dockerfile: chat.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
-
-  SocketApiFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref SocketApiFunction]]
-      RetentionInDays: 14  
+    DependsOn: SocketApiFunctionLogGroup
 
   SocketApiFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -261,14 +220,12 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SocketApi}/Prod/*
 
-
-  SendInteg:
-    Type: AWS::ApiGatewayV2::Integration
+  SocketApi:
+    Type: AWS::ApiGatewayV2::Api
     Properties:
-      ApiId: !Ref SocketApi
-      Description: Send Integration
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SocketApiFunction.Arn}/invocations
+      Name: !Ref SocketApiName
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
 
   SendRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -282,7 +239,13 @@ Resources:
         - - 'integrations'
           - !Ref SendInteg
 
-
+  SendInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref SocketApi
+      Description: Send Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SocketApiFunction.Arn}/invocations
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
@@ -290,14 +253,6 @@ Resources:
     - SendRoute
     Properties:
       ApiId: !Ref SocketApi
-
-
-  SocketApiGatewayAccessLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-restapi-access-logs'
-      RetentionInDays: 14
-
 
   Stage:
     Type: AWS::ApiGatewayV2::Stage
@@ -315,28 +270,11 @@ Resources:
           "eventType":"$context.eventType","routeKey":"$context.routeKey",
           "status":"$context.status","connectionId":"$context.connectionId"}
 
-        
-  ApiGatewayLoggingRole:
-    Type: AWS::IAM::Role
+  LoginFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
     Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: apigateway.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: ApiGatewayLoggingPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/apigateway/*:*'
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-LoginFunction'
+      RetentionInDays: 14
 
   LoginFunction:
     Type: AWS::Serverless::Function
@@ -366,15 +304,16 @@ Resources:
       Dockerfile: login.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+    DependsOn: LoginFunctionLogGroup
 
-  LoginFunctionLogGroup:
+  FeedbackFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-LoginFunctionLogGroup', !Ref LoginFunction]]
-      RetentionInDays: 14  
-  
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-FeedbackFunction'
+      RetentionInDays: 14
+
   FeedbackFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
       Architectures:
@@ -382,13 +321,13 @@ Resources:
       Role: !Ref LambdaExecutionRole
       Events:
         FeedbackPost:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             Path: /api/feedback/
             Method: POST
             RestApiId: !Ref ApiDeployment
         FeedbackGet:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             Path: /api/feedback/
             Method: OPTIONS
@@ -401,16 +340,16 @@ Resources:
       Dockerfile: feedback.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+    DependsOn: FeedbackFunctionLogGroup
 
-  FeedbackFunctionLogGroup:
+  EmbeddingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-FeedbackFunctionLogGroup', !Ref FeedbackFunction]]
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-EmbeddingFunctionLogGroup'
       RetentionInDays: 14  
 
-
   EmbeddingFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
       Architectures:
@@ -418,12 +357,12 @@ Resources:
       Role: !Ref LambdaExecutionRole
       Events:
         EmbeddingPost:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             Path: /api/emb/
             Method: POST
             RestApiId: !Ref ApiDeployment
-      Tags: 
+      Tags:
         Environment: !Ref Environment
         Function: "EmbeddingFunction-RestApi"
       Tracing: Active
@@ -431,16 +370,16 @@ Resources:
       Dockerfile: embedding.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+    DependsOn: EmbeddingFunctionLogGroup
 
-  EmbeddingFunctionLogGroup:
+  WriteToDBFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-EmbeddingFunctionLogGroup', !Ref EmbeddingFunction]]
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-WriteToDBFunction'
       RetentionInDays: 14  
-      
 
   WriteToDBFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
       Architectures:
@@ -448,7 +387,7 @@ Resources:
       Role: !Ref LambdaExecutionRole
       Events:
         WriteToDBPost:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             Path: /write_to_db
             Method: POST
@@ -457,20 +396,23 @@ Resources:
         Environment: !Ref Environment
         Function: "WritetoDBfunction-RestApi"
       Tracing: Active
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Ref WriteToDBFunctionLogGroup
     Metadata:
       Dockerfile: write_to_db.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+    DependsOn: WriteToDBFunctionLogGroup
 
-
-  WriteToDBFunctionLogGroup:
+  AddErrorDetailsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-WriteToDBFunctionLogGroup', !Ref WriteToDBFunction]]
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-AddErrorDetailsFunction'
       RetentionInDays: 14  
 
   AddErrorDetailsFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
       Architectures:
@@ -478,7 +420,7 @@ Resources:
       Role: !Ref LambdaExecutionRole
       Events:
         AddErrorDetailsPost:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             Path: /add-error-details
             Method: POST
@@ -487,15 +429,19 @@ Resources:
         Environment: !Ref Environment
         Function: "AddErrordetailsfunction-RestApi"
       Tracing: Active
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Ref AddErrorDetailsLogGroup
     Metadata:
       Dockerfile: add-error-details.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+    DependsOn: AddErrorDetailsLogGroup
 
-  AddErrorDetailsLogGroup:
+  EvaluationFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-AddErrorDetailsLogGroup', !Ref AddErrorDetailsFunction]]
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-EvaluationFunctionLogGroup'
       RetentionInDays: 14  
 
   EvaluationFunction:
@@ -504,7 +450,7 @@ Resources:
       Role: !Ref LambdaExecutionRole
       PackageType: Image
       Architectures:
-        - x86_64
+      - x86_64
       Events:
         EvaluationGet:
           Type: Api
@@ -526,24 +472,13 @@ Resources:
       Dockerfile: evaluation.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
+    DependsOn: EvaluationFunctionLogGroup
 
-  EvaluationFunctionLogGroup:
+  MetricSchedulerLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-EvaluationFunctionLogGroup', !Ref EvaluationFunction]]
-      RetentionInDays: 14   
-
-
-    
-  # IAMAccessAnalyzer:
-  #   Type: AWS::AccessAnalyzer::Analyzer
-  #   Properties:
-  #     AnalyzerName: IAMAccessAnalyzer
-  #     Type: ACCOUNT
-  #     Tags:
-  #       - 
-  #         Key: Environment
-  #         Value: !Ref Environment
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-MetricSchedulerLogGroup'
+      RetentionInDays: 14  
 
   MetricScheduler:
     Type: AWS::Serverless::Function
@@ -558,21 +493,12 @@ Resources:
           Properties:
             Schedule: cron(0 12 * * ? *)
     Metadata:
-        Dockerfile: metric.Dockerfile
-        DockerContext: apis/
-        DockerTag: python3.10-v1
+      Dockerfile: metric.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: MetricSchedulerLogGroup
 
-  MetricSchedulerLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-MetricSchedulerLogGroup',  !Ref MetricScheduler]]
-      RetentionInDays: 14  
-
-        
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   EmbeddingFunctionUrl:
     Description: "API Gateway endpoint URL for Settings function"
     Value: !Sub "https://${ApiDeployment}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/api/emb/"
