@@ -98,48 +98,12 @@ Globals:
     
 
 Resources:
-  RestApiCustomDomain:
-    Type: AWS::ApiGateway::DomainName
-    Properties:
-      DomainName: !Ref RestApiDomain
-      CertificateArn: !Ref RestApiCertArn
-      EndpointConfiguration:
-        Types:
-          - "EDGE"
-      SecurityPolicy: TLS_1_2
-    DependsOn: ApiDeployment
-      
-  RestApiBasePathMapping:
-    Type: AWS::ApiGateway::BasePathMapping
-    Properties:
-      DomainName: !Ref RestApiDomain
-      RestApiId: !Ref ApiDeployment
-      Stage: !Ref Environment
-    DependsOn: 
-      - RestApiCustomDomain
-      - ApiDeployment
-    
 
-  # # Add custom domain for Socket API
-  SocketApiDomainName:
-    Type: AWS::ApiGatewayV2::DomainName
+  RestApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
     Properties:
-      DomainName: !Ref SocketApiDomain
-      DomainNameConfigurations:
-        - CertificateArn: !Ref SocketApiCertArn
-          EndpointType: REGIONAL
-          SecurityPolicy: TLS_1_2
-    DependsOn: SocketApi 
-
-  SocketApiBasePathMapping:
-    Type: AWS::ApiGatewayV2::ApiMapping
-    Properties:
-      ApiId: !Ref SocketApi
-      DomainName: !Ref SocketApiDomain
-      Stage: !Ref Stage
-    DependsOn: 
-      - SocketApiDomainName
-      - Stage
+      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-restapi-access-logs'
+      RetentionInDays: 14
 
   ApiDeployment:
     Type: AWS::Serverless::Api
@@ -162,6 +126,64 @@ Resources:
       #     HttpMethod: '*'
       #     ResourcePath: '/*'
       #     MetricsEnabled: true
+
+
+  RestApiCustomDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !Ref RestApiDomain
+      CertificateArn: !Ref RestApiCertArn
+      EndpointConfiguration:
+        Types:
+          - "EDGE"
+      SecurityPolicy: TLS_1_2
+    DependsOn: ApiDeployment
+      
+  RestApiBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName: !Ref RestApiDomain
+      RestApiId: !Ref ApiDeployment
+      Stage: !Ref Environment
+    DependsOn: 
+      - RestApiCustomDomain
+
+    
+  SocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Ref SocketApiName
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+  
+  SocketApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['/', ['/aws/lambda', !Ref SocketApi]]
+      RetentionInDays: 14  
+
+  # # Add custom domain for Socket API
+  SocketApiDomainName:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: !Ref SocketApiDomain
+      DomainNameConfigurations:
+        - CertificateArn: !Ref SocketApiCertArn
+          EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
+    DependsOn: SocketApi 
+
+  SocketApiBasePathMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Properties:
+      ApiId: !Ref SocketApi
+      DomainName: !Ref SocketApiDomain
+      Stage: !Ref Stage
+    DependsOn: 
+      - SocketApiDomainName
+
+
+
 
   # MetricScheduler:
   #   Type: AWS::Serverless::Function
@@ -205,11 +227,7 @@ Resources:
                   - logs:PutLogEvents
                 Resource: arn:aws:logs:*:*:*
 
-  RestApiGatewayAccessLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-restapi-access-logs'
-      RetentionInDays: 14
+
 
   SocketApiFunction:
     Type: AWS::Serverless::Function
@@ -243,18 +261,14 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SocketApi}/Prod/*
 
-  SocketApi:
-    Type: AWS::ApiGatewayV2::Api
+
+  SendInteg:
+    Type: AWS::ApiGatewayV2::Integration
     Properties:
-      Name: !Ref SocketApiName
-      ProtocolType: WEBSOCKET
-      RouteSelectionExpression: "$request.body.action"
-  
-  SocketApiLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref SocketApi]]
-      RetentionInDays: 14  
+      ApiId: !Ref SocketApi
+      Description: Send Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SocketApiFunction.Arn}/invocations
 
   SendRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -267,13 +281,8 @@ Resources:
         - '/'
         - - 'integrations'
           - !Ref SendInteg
-  SendInteg:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref SocketApi
-      Description: Send Integration
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SocketApiFunction.Arn}/invocations
+
+
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
@@ -281,6 +290,15 @@ Resources:
     - SendRoute
     Properties:
       ApiId: !Ref SocketApi
+
+
+  SocketApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-restapi-access-logs'
+      RetentionInDays: 14
+
+
   Stage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
@@ -296,11 +314,8 @@ Resources:
           "user":"$context.identity.user","requestTime":"$context.requestTime",
           "eventType":"$context.eventType","routeKey":"$context.routeKey",
           "status":"$context.status","connectionId":"$context.connectionId"}
-  SocketApiGatewayAccessLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-socketapi-access-logs'
-      RetentionInDays: 14
+
+        
   ApiGatewayLoggingRole:
     Type: AWS::IAM::Role
     Properties:
@@ -355,7 +370,7 @@ Resources:
   LoginFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref LoginFunction]]
+      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-LoginFunctionLogGroup', !Ref LoginFunction]]
       RetentionInDays: 14  
   
   FeedbackFunction:
@@ -390,7 +405,7 @@ Resources:
   FeedbackFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref FeedbackFunction]]
+      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-FeedbackFunctionLogGroup', !Ref FeedbackFunction]]
       RetentionInDays: 14  
 
 
@@ -420,8 +435,9 @@ Resources:
   EmbeddingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref EmbeddingFunction]]
+      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-EmbeddingFunctionLogGroup', !Ref EmbeddingFunction]]
       RetentionInDays: 14  
+      
 
   WriteToDBFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -441,19 +457,16 @@ Resources:
         Environment: !Ref Environment
         Function: "WritetoDBfunction-RestApi"
       Tracing: Active
-      Environment:
-        Variables:
-          LOG_GROUP_NAME: !Ref WriteToDBFunctionLogGroup
     Metadata:
       Dockerfile: write_to_db.Dockerfile
       DockerContext: apis/
       DockerTag: python3.10-v1
-    DependsOn: WriteToDBFunctionLogGroup
+
 
   WriteToDBFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref WriteToDBFunction]]
+      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-WriteToDBFunctionLogGroup', !Ref WriteToDBFunction]]
       RetentionInDays: 14  
 
   AddErrorDetailsFunction:
@@ -474,9 +487,6 @@ Resources:
         Environment: !Ref Environment
         Function: "AddErrordetailsfunction-RestApi"
       Tracing: Active
-      Environment:
-        Variables:
-          LOG_GROUP_NAME: !Ref AddErrorDetailsLogGroup
     Metadata:
       Dockerfile: add-error-details.Dockerfile
       DockerContext: apis/
@@ -485,7 +495,7 @@ Resources:
   AddErrorDetailsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref AddErrorDetailsFunction]]
+      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-AddErrorDetailsLogGroup', !Ref AddErrorDetailsFunction]]
       RetentionInDays: 14  
 
   EvaluationFunction:
@@ -520,7 +530,7 @@ Resources:
   EvaluationFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref EvaluationFunction]]
+      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-EvaluationFunctionLogGroup', !Ref EvaluationFunction]]
       RetentionInDays: 14   
 
 
@@ -555,7 +565,7 @@ Resources:
   MetricSchedulerLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref MetricScheduler]]
+      LogGroupName: !Join ['/', ['/aws/lambda/${Stack}-${Environment}-MetricSchedulerLogGroup',  !Ref MetricScheduler]]
       RetentionInDays: 14  
 
         
