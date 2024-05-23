@@ -367,7 +367,7 @@ Resources:
             RestApiId: !Ref ApiDeployment
       Environment:
         Variables:
-          LOG_GROUP_NAME: !Ref EmbeddingFunctionLogGroup
+          LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-EmbeddingFunctionLogGroup'
       Tags:
         Environment: !Ref Environment
         Function: "EmbeddingFunction-RestApi"
@@ -404,7 +404,7 @@ Resources:
       Tracing: Active
       Environment:
         Variables:
-          LOG_GROUP_NAME: !Ref WriteToDBFunctionLogGroup
+          LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-WriteToDBFunction'
     Metadata:
       Dockerfile: write_to_db.Dockerfile
       DockerContext: apis/
@@ -437,7 +437,7 @@ Resources:
       Tracing: Active
       Environment:
         Variables:
-          LOG_GROUP_NAME: !Ref AddErrorDetailsLogGroup
+          LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-AddErrorDetailsFunction'
     Metadata:
       Dockerfile: add-error-details.Dockerfile
       DockerContext: apis/
@@ -472,7 +472,7 @@ Resources:
             RestApiId: !Ref ApiDeployment
       Environment:
         Variables:
-          LOG_GROUP_NAME: !Ref EvaluationFunctionLogGroup
+          LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-EvaluationFunctionLogGroup'
       Tags:
         Environment: !Ref Environment
         Function: "EvaluationFunction-RestApi"
@@ -503,7 +503,7 @@ Resources:
             Schedule: cron(0 12 * * ? *)
       Environment:
         Variables:
-          LOG_GROUP_NAME: !Ref MetricSchedulerLogGroup
+          LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-MetricSchedulerLogGroup'
     Metadata:
       Dockerfile: metric.Dockerfile
       DockerContext: apis/
