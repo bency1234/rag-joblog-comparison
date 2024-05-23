@@ -1,6 +1,7 @@
 # Import libraries
-import subprocess
 
+from ai.chat.apis import call_add_error_details_api
+from ai.chat.error_details_exception import capture_error_details
 from ai.common.constants import CONNECTION_STRING
 from ai.llms.constants import (
     CHUNK_SIZE_LIMIT,
@@ -44,14 +45,19 @@ def fetch_data_from_source(file_path, s3_url):
         list: A list of documents to be processed.
     """
     split_docs = []
-    error = ""
+    error = None
     try:
         logger.info("File Format Enabled")
-        split_docs = get_splits_of_different_types_of_format(file_path, s3_url)
+        split_docs, error_info = get_splits_of_different_types_of_format(
+            file_path, s3_url
+        )
+        logger.info(f"error_info.................{error_info}")
         logger.info(f"file_path.................{file_path}")
-    except Exception as ex:
-        logger.error(f"Failed to fetch data: {ex}")
-        error = str(ex)
+    except Exception as e:
+        error_info = capture_error_details(e)
+        call_add_error_details_api(user_input=None, error=error_info)
+        logger.error(f"Failed to fetch data: {e}")
+        error = str(e)
     return split_docs, error
 
 
@@ -75,20 +81,18 @@ def get_splits_of_different_types_of_format(file_path, s3_url):
         return text_splitter.split_documents([document])
 
     if FORMAT == "md":
-        text = load_and_split_md(file_path)
+        loader = UnstructuredMarkdownLoader(f"{file_path}", mode="single")
+        text, error_info = text_splitter(loader)
 
     elif FORMAT == "pdf":
-        logger.info("PDF Splitted")
-        text = load_and_split_pdf(file_path)
+        loader = PyPDFLoader(f"{file_path}")
+        text, error_info = text_splitter(loader)
 
     elif FORMAT in ["docx"]:
-        text = load_and_split_word(file_path)
-        logger.info(f"text.......{text}")
+        loader = Docx2txtLoader(f"{file_path}")
+        text, error_info = text_splitter(loader)
 
-    elif FORMAT == "doc":
-        text = subprocess.run(["antiword", file_path], capture_output=True, text=True)
-        logger.info(f"text....{text}")
-
+    logger.info(f"text.......{text}, error_info...{error_info}")
     if text:
         split_docs = split_text_unstructured(text)
 
@@ -101,8 +105,11 @@ def get_splits_of_different_types_of_format(file_path, s3_url):
         logger.info(
             f"{len(split_docs)} documents inserted into the database successfully."
         )
-        return split_docs
-    return False
+        return split_docs, error_info
+
+    elif error_info is not None:
+        logger.error(f"Error info: {error_info}")
+        return split_docs, error_info
 
 
 def insert_data_into_vector_db(file_path, s3_url):
@@ -112,55 +119,26 @@ def insert_data_into_vector_db(file_path, s3_url):
     output = None
     logger.info("Embedding Started...")
     logger.info(f"Collection Name: {COLLECTION_NAME}")
-    err = fetch_data_from_source(file_path, s3_url)
-    if err:
-        output = f"Embedding failed with the error - {err}"
+    error_info = fetch_data_from_source(file_path, s3_url)
+    if error_info:
+        output = f"Embedding failed with the error - {error_info}"
         logger.error(output)
-    else:
+    elif error_info is None:
         output = "Embedding Completed..."
         logger.info(output)
 
     return output
 
 
-def load_and_split_md(file_name):
+def text_splitter(loader):
     try:
-        loader = UnstructuredMarkdownLoader(f"{file_name}", mode="single")
-        text = loader.load_and_split()
-        if text:
-            logger.info(f"Text using UnstructuredWordDocumentLoader {text}")
-            return text
-        else:
-            raise ValueError("Empty text returned by UnstructuredWordDocumentLoader")
-    except Exception as e:
-        logger.info(f"Failed to process markdown document: {e}")
-    return None
-
-
-def load_and_split_pdf(file_name):
-    try:
-        loader = PyPDFLoader(f"{file_name}")
-        logger.info(f"Processing with PyPDFLoader{file_name}")
-        text = loader.load_and_split()
-        if text:
-            logger.info(f"Text using PyPDFLoader{text}")
-            return text
-        else:
-            raise ValueError("Empty text returned by PyPDFLoader")
-    except Exception as e:
-        logger.info(f"PyPDFLoader failed: {e}")
-    return None
-
-
-def load_and_split_word(file_name):
-    try:
-        loader = Docx2txtLoader(f"{file_name}")
+        error_info = None
         text = loader.load_and_split()
         if text:
             logger.info(f"Text using UnstructuredWordDocumentLoader{text}")
-            return text
-        else:
-            raise ValueError("Empty text returned by UnstructuredWordDocumentLoader")
+            return text, error_info
     except Exception as e:
+        error_info = capture_error_details(e)
+        call_add_error_details_api(user_input=None, error=error_info)
         logger.info(f"Failed to process Word document: {e}")
-    return None
+        return text, error_info
