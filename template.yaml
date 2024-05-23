@@ -204,6 +204,9 @@ Resources:
         Environment: !Ref Environment
         Function: "SocketApi"
       Tracing: Active
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Ref MetricSchedulerLogGroup
     Metadata:
       Dockerfile: chat.Dockerfile
       DockerContext: apis/
@@ -362,6 +365,9 @@ Resources:
             Path: /api/emb/
             Method: POST
             RestApiId: !Ref ApiDeployment
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Ref EmbeddingFunctionLogGroup
       Tags:
         Environment: !Ref Environment
         Function: "EmbeddingFunction-RestApi"
@@ -464,6 +470,9 @@ Resources:
             Path: /evaluate
             Method: OPTIONS
             RestApiId: !Ref ApiDeployment
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Ref EvaluationFunctionLogGroup
       Tags:
         Environment: !Ref Environment
         Function: "EvaluationFunction-RestApi"
@@ -492,6 +501,9 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: cron(0 12 * * ? *)
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Ref MetricSchedulerLogGroup
     Metadata:
       Dockerfile: metric.Dockerfile
       DockerContext: apis/
