@@ -36,10 +36,14 @@ TOGGLE_ON_SYSTEM_PROMPT = """
     2. [Exact_File_Name_2](s3 url),
     ---
 
+    Human: What is Python?
+    AI: Python is a high-level, interpreted programming language known for its readability and efficiency in code writing.
+
     Note:
     1. Strictly your response should be in a markdown language format
     2. Return source for all the questions which you answer from the document
     3. Track user queries to provide context-aware responses. Respond with a summary of recent interactions upon request.
+    4. Please refrain from citing external sources for questions beyond the document's scope, as well as for questions regarding greetings. Strictly do not provide Sources as heading for outside related questions only have the response for the query that has been asked.
     
     Summaries: {summaries}
     """

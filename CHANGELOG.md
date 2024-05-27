@@ -10,7 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added Error logs in embeddings function 
 
 ### Fixed
-- Fixed the cron exxpression as 1 day for metric scheduler
+- To restrict citations for outside scope queries so Updated the prompt accordingly
+
+### Fixed
+- Fixed the cron expression as 1 day for metric scheduler
 
 ### Fixed
 - Fix - Empty Message Log issue
