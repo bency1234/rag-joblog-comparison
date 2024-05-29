@@ -365,6 +365,12 @@ Resources:
             Path: /api/emb/
             Method: POST
             RestApiId: !Ref ApiDeployment
+        EmbeddingOptions:
+          Type: Api
+          Properties:
+            Path: /api/emb/
+            Method: OPTIONS
+            RestApiId: !Ref ApiDeployment
       Environment:
         Variables:
           LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-EmbeddingFunctionLogGroup'
