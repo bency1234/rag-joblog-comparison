@@ -1,7 +1,9 @@
 import json
+import os
 import time
 import traceback
 
+import psycopg2
 from ai.chat.apis import call_add_error_details_api, call_write_to_db_api
 from ai.chat.logic import GenerateResponse
 from ai.chat.validation import validate_user_input
@@ -14,7 +16,9 @@ from ai.common.api_validations import (
 )
 from ai.common.utils.debug import INITIAL_ROW
 from ai.common.utils.stream import construct_bot_response, stream_response
-from ai.vector.config import get_vector_store
+from ai.vector.config import get_current_file_vector_store, get_vector_store
+from common.chatbot import Conversation
+from common.db import db
 from common.envs import get_secret_value_from_secret_manager, logger
 from dotenv import load_dotenv
 
@@ -62,6 +66,10 @@ def process_request(request):
     user_input = get_user_input(request)
     time_stamp = request.get(ChatAPIRequestParameters.TIME_STAMP.value, None)
     message_log = request.get(ChatAPIRequestParameters.MESSAGE_LOG.value, [])
+    # collection_id = request.get(ChatAPIRequestParameters.COLLECTION_ID.value, None)
+    # user_id = request.get(ChatAPIRequestParameters.USER_ID.value, None)
+    collection_id = "20"
+    user_id = "2"
     logger.info(f"request: {request}")
     return (
         start_time,
@@ -69,12 +77,20 @@ def process_request(request):
         time_stamp,
         message_log,
         use_rag,
+        collection_id,
+        user_id,
     )
 
 
 def handle_user_query(request, client=None, connection_id=None):
     def process_response(
-        user_input, message_log, vector_store, client, connection_id, use_rag
+        user_input,
+        message_log,
+        vector_store,
+        client,
+        connection_id,
+        use_rag,
+        collection_id,
     ):
         (
             valid_query,
@@ -83,7 +99,7 @@ def handle_user_query(request, client=None, connection_id=None):
             source_documents,
             system_cost,
         ) = GenerateResponse(INITIAL_ROW, vector_store).main(
-            user_input, message_log, client, connection_id, use_rag
+            user_input, message_log, client, connection_id, use_rag, collection_id
         )
 
         return valid_query, raw_prompt, bot_response, source_documents, system_cost
@@ -94,6 +110,8 @@ def handle_user_query(request, client=None, connection_id=None):
         time_stamp,
         message_log,
         use_rag,
+        collection_id,
+        user_id,
     ) = process_request(request)
 
     try:
@@ -104,8 +122,20 @@ def handle_user_query(request, client=None, connection_id=None):
 
         INITIAL_ROW[0] = user_input
 
-        vector_store = get_vector_store()
+        collection_id, collection_name = check_collection_id_exist(
+            collection_id, time_stamp, user_id, db
+        )
+        print(collection_id)
 
+        collection_name_check = "joblog_" + str(collection_id)
+        exists = check_collection_name_exists(collection_name_check)
+
+        print(exists)
+
+        if exists == False:
+            vector_store = get_vector_store()
+        else:
+            vector_store = get_current_file_vector_store(collection_name_check)
         (
             valid_query,
             raw_prompt,
@@ -113,7 +143,13 @@ def handle_user_query(request, client=None, connection_id=None):
             source_documents,
             system_cost,
         ) = process_response(
-            user_input, message_log, vector_store, client, connection_id, use_rag
+            user_input,
+            message_log,
+            vector_store,
+            client,
+            connection_id,
+            use_rag,
+            collection_id,
         )
 
         response_time = time.time() - start_time
@@ -150,3 +186,66 @@ def handle_user_query(request, client=None, connection_id=None):
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
         handle_system_error(user_input, client, connection_id)
+
+
+conn = psycopg2.connect(
+    host=os.environ.get(
+        "PGVECTOR_HOST", get_secret_value_from_secret_manager("DATABASE_HOST")
+    ),
+    user=os.environ.get(
+        "PGVECTOR_USER", get_secret_value_from_secret_manager("DATABASE_USER")
+    ),
+    password=os.environ.get(
+        "PGVECTOR_PASSWORD", get_secret_value_from_secret_manager("DATABASE_PASS")
+    ),
+    database=os.environ.get(
+        "PGVECTOR_DATABASE", get_secret_value_from_secret_manager("DATABASE_NAME")
+    ),
+)
+
+
+def check_collection_name_exists(collection_name_check):
+    try:
+        print(collection_name_check)
+        # Connect to the PostgreSQL database
+
+        cursor = conn.cursor()
+
+        # Execute the query
+        query = "SELECT EXISTS (SELECT 1 FROM langchain_pg_collection WHERE name = %s)"
+        cursor.execute(query, (collection_name_check,))
+
+        # Fetch the result
+        exists = cursor.fetchone()[0]
+
+        # Close the cursor and connection
+        cursor.close()
+        conn.close()
+
+        # Check if the name exists and print the result
+        if exists:
+            print("exist")
+        else:
+            print("not exist")
+        return exists
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+def check_collection_id_exist(collection_id, time_stamp, user_id, db):
+    if not collection_id:
+        new_conversation = Conversation()
+
+        new_conversation.time_stamp = time_stamp
+        new_conversation.user_id = user_id
+        db.session.add(new_conversation)
+        db.session.commit()
+
+        new_conversation.collection_name = (
+            "joblog_" + str(user_id) + "_" + str(new_conversation.id)
+        )
+        db.session.commit()
+        collection_id = new_conversation.id
+        collection_name = new_conversation.collection_name
+    collection_name = "joblog"
+    return collection_id, collection_name

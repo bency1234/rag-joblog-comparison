@@ -71,6 +71,7 @@ class GenerateResponse:
         ).configure_model(
             callbacks=[AWSStreamHandler(client_id, connection_id)], streaming=True
         )
+        print(self.vector_store)
         if use_rag == True:
             chain_type_kwargs = {"prompt": prompt}
             chain = RetrievalQAWithSourcesChain.from_chain_type(
@@ -119,7 +120,10 @@ class GenerateResponse:
         client_id: None,
         connection_id: None,
         use_rag: bool,
+        collection_id: str,
     ):
+        print("collection_id", collection_id)
+
         bot_response = ""
         raw_prompt, bot_response, source_documents, total_cost = self.chat_completion(
             user_input, message_log, client_id, connection_id, use_rag
