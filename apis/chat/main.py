@@ -67,10 +67,8 @@ def process_request(request):
     user_input = get_user_input(request)
     time_stamp = request.get(ChatAPIRequestParameters.TIME_STAMP.value, None)
     message_log = request.get(ChatAPIRequestParameters.MESSAGE_LOG.value, [])
-    # collection_id = request.get(ChatAPIRequestParameters.COLLECTION_ID.value, None)
-    # user_id = request.get(ChatAPIRequestParameters.USER_ID.value, None)
-    collection_id = "20"
-    user_id = "2"
+    collection_id = request.get(ChatAPIRequestParameters.COLLECTION_ID.value, None)
+    user_id = request.get(ChatAPIRequestParameters.USER_ID.value, None)
     logger.info(f"request: {request}")
     return (
         start_time,
