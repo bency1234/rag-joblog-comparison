@@ -192,7 +192,6 @@ def lambda_handler1(*args):
                 collection_name = new_conversation.collection_name
                 conversation_id = new_conversation.id
             else:
-                print(conversation_id)
                 collection_name = "joblog_" + str(user_id) + "_" + str(conversation_id)
 
             if not file_name:
@@ -219,7 +218,6 @@ def lambda_handler1(*args):
 
 def get_collection_uuid_by_name(collection_name, conversation_id):
     try:
-        print(collection_name)
         # Connect to the PostgreSQL database
 
         conn = psycopg2.connect(
@@ -253,7 +251,7 @@ def get_collection_uuid_by_name(collection_name, conversation_id):
         # Return the UUID if found
         if result:
             uuid = result[0]
-            print(f"The UUID for name '{collection_name}' is: {uuid}")
+            logger.info(f"The UUID for name '{collection_name}' is: {uuid}")
             update_query = """
                 UPDATE conversation
                 SET uuid = %s
@@ -268,10 +266,10 @@ def get_collection_uuid_by_name(collection_name, conversation_id):
 
             return uuid
         else:
-            print(f"No UUID found for name '{collection_name}'")
+            logger.info(f"No UUID found for name '{collection_name}'")
             return None
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.info(f"An error occurred: {e}")
 
 
 def lambda_handler(*args):

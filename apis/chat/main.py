@@ -228,7 +228,7 @@ def check_collection_name_exists(collection_name_check):
     except Exception as e:
         error_info = capture_error_details(e)
         call_add_error_details_api(user_input=None, error=error_info)
-        print(f"An error occurred: {e}")
+        logger.info(f"An error occurred: {e}")
 
 
 def check_collection_id_exist(collection_id, time_stamp, user_id, db):
