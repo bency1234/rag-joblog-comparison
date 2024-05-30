@@ -5,6 +5,7 @@ import traceback
 
 import psycopg2
 from ai.chat.apis import call_add_error_details_api, call_write_to_db_api
+from ai.chat.error_details_exception import capture_error_details
 from ai.chat.logic import GenerateResponse
 from ai.chat.validation import validate_user_input
 from ai.common.api_validations import (
@@ -125,12 +126,11 @@ def handle_user_query(request, client=None, connection_id=None):
         collection_id, collection_name = check_collection_id_exist(
             collection_id, time_stamp, user_id, db
         )
-        print(collection_id)
 
         collection_name_check = "joblog_" + str(collection_id)
         exists = check_collection_name_exists(collection_name_check)
 
-        print(exists)
+        logger.info("exists", exists)
 
         if exists == False:
             vector_store = get_vector_store()
@@ -185,6 +185,8 @@ def handle_user_query(request, client=None, connection_id=None):
 
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
+        error_info = capture_error_details(e)
+        call_add_error_details_api(user_input=None, error=error_info)
         handle_system_error(user_input, client, connection_id)
 
 
@@ -206,7 +208,6 @@ conn = psycopg2.connect(
 
 def check_collection_name_exists(collection_name_check):
     try:
-        print(collection_name_check)
         # Connect to the PostgreSQL database
 
         cursor = conn.cursor()
@@ -222,13 +223,11 @@ def check_collection_name_exists(collection_name_check):
         cursor.close()
         conn.close()
 
-        # Check if the name exists and print the result
-        if exists:
-            print("exist")
-        else:
-            print("not exist")
         return exists
+
     except Exception as e:
+        error_info = capture_error_details(e)
+        call_add_error_details_api(user_input=None, error=error_info)
         print(f"An error occurred: {e}")
 
 
@@ -247,5 +246,6 @@ def check_collection_id_exist(collection_id, time_stamp, user_id, db):
         db.session.commit()
         collection_id = new_conversation.id
         collection_name = new_conversation.collection_name
+
     collection_name = "joblog"
     return collection_id, collection_name

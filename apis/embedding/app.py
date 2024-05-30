@@ -89,7 +89,7 @@ def handle_uploaded_file_success(filename, file_path, collection_name):
         s3_url = upload_to_s3(filename, file_path)
         output = insert_data_into_vector_db(file_path, s3_url, collection_name)
         user_file = UserFiles(file_name=file_path, embedded=True, s3_url=s3_url)
-        print("USER FILE", user_file)
+        logger.info(f"USER FILE: {user_file}")
         db.session.add(user_file)
         db.session.commit()
         return {"message": output, "s3_url": s3_url}
@@ -174,15 +174,12 @@ def lambda_handler1(*args):
             conversation_id = event["headers"].get("Conversation-Id")
             time_stamp = event["headers"].get("time_stamp")
             user_id = event["headers"].get("User-Id")
-            print("....................", user_id)
-            print("CONVERSATION ID", conversation_id)
 
+            logger.info(
+                f"user_id: {user_id}, time_stamp: {time_stamp}, conversation_id: {conversation_id}"
+            )
             if not conversation_id:
                 new_conversation = Conversation()
-                print(
-                    "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-                )
-                logger.info(f"user_id {user_id}")
                 new_conversation.time_stamp = time_stamp
                 new_conversation.user_id = user_id
                 db.session.add(new_conversation)
