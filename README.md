@@ -139,6 +139,13 @@ To simplify troubleshooting, SAM CLI has a command called `sam logs`. `sam logs`
 You can find more information and examples about filtering Lambda function logs in the [SAM CLI Documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-logging.html).
 
 
+### Automation-test
+
+To run automation for chat interface that takes all the user input from an excel and runs a automation and get the response and stores them
+
+```bash
+joblog.ai$ python3 scripts/automation.py
+```
 ## Cleanup
 
 To delete the sample application that you created, use the AWS CLI. Assuming you used your project name for the stack name, you can run the following:
