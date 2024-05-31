@@ -24,9 +24,14 @@ def log_error_in_db(user_input, error_type, error_details, db):
     error_log = ChatError(
         user_input=user_input, error_type=error_type, error_details=error_details
     )
-    db.session.add(error_log)
-    db.session.commit()
-    logger.info("Error details added successfully")
+    try:
+        with db.session() as session:
+            session.add(error_log)
+            session.commit()
+        logger.info("Error details added successfully")
+    except Exception as e:
+        logger.error(f"Failed to log error details: {e}")
+        raise e
 
 
 def add_file_error_details_in_user_info(user_file, error_details, db):
