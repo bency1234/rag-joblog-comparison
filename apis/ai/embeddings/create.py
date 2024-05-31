@@ -114,6 +114,7 @@ def insert_data_into_vector_db(file_path, s3_url, collection_name):
     logger.info("Embedding Started...")
     logger.info(f"Collection Name: {collection_name}")
     split_docs, error_info = fetch_data_from_source(file_path, s3_url, collection_name)
+    logger.info(f"split_docs.................{split_docs}")
     if error_info:
         output = f"Embedding failed with the error - {error_info}"
         logger.error(output)

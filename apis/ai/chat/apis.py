@@ -39,4 +39,4 @@ def call_write_to_db_api(record, user_id=1):
         json={"record": record, "user_id": user_id},
         headers=HEADERS,
     )
-    return response.json()["id"]
+    return response.json()

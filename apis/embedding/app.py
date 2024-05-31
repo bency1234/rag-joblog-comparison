@@ -8,11 +8,10 @@ from datetime import datetime
 from http import HTTPStatus
 
 import boto3
-import psycopg2
 from ai.embeddings.create import insert_data_into_vector_db
 from ai.llms.constants import CONTENT_TYPES
 from common.app_utils import get_app
-from common.chatbot import Conversation, UserFiles
+from common.chatbot import UserFiles
 from common.db import db
 from common.envs import get_secret_value_from_secret_manager, logger
 from common.lambda_utils import call_fn
@@ -117,8 +116,6 @@ def handle_valid_file(
                 file.write(file_content)
             handle_uploaded_file_success(safe_filename, file_path, collection_name)
 
-            get_collection_uuid_by_name(collection_name, conversation_id)
-
             return {
                 "status": True,
                 "success": True,
@@ -178,22 +175,6 @@ def lambda_handler1(*args):
             logger.info(
                 f"user_id: {user_id}, time_stamp: {time_stamp}, conversation_id: {conversation_id}"
             )
-            if not conversation_id:
-                new_conversation = Conversation()
-                new_conversation.time_stamp = time_stamp
-                new_conversation.user_id = user_id
-                db.session.add(new_conversation)
-                db.session.commit()
-
-                new_conversation.collection_name = (
-                    "joblog_" + str(user_id) + "_" + str(new_conversation.id)
-                )
-                db.session.commit()
-                collection_name = new_conversation.collection_name
-                conversation_id = new_conversation.id
-            else:
-                collection_name = "joblog_" + str(user_id) + "_" + str(conversation_id)
-
             if not file_name:
                 return generate_bad_request_response("X-Filename headers is missing")
             else:
@@ -205,7 +186,7 @@ def lambda_handler1(*args):
                     if error:
                         return generate_bad_request_response(error)
             return handle_valid_file(
-                file_name, file_path, file_content, collection_name, conversation_id
+                file_name, file_path, file_content, conversation_id
             )
         except Exception:
             return {
@@ -214,62 +195,6 @@ def lambda_handler1(*args):
             }, HTTPStatus.INTERNAL_SERVER_ERROR.value
         finally:
             secure_file_deletion(file_path)
-
-
-def get_collection_uuid_by_name(collection_name, conversation_id):
-    try:
-        # Connect to the PostgreSQL database
-
-        conn = psycopg2.connect(
-            host=os.environ.get(
-                "PGVECTOR_HOST", get_secret_value_from_secret_manager("DATABASE_HOST")
-            ),
-            user=os.environ.get(
-                "PGVECTOR_USER", get_secret_value_from_secret_manager("DATABASE_USER")
-            ),
-            password=os.environ.get(
-                "PGVECTOR_PASSWORD",
-                get_secret_value_from_secret_manager("DATABASE_PASS"),
-            ),
-            database=os.environ.get(
-                "PGVECTOR_DATABASE",
-                get_secret_value_from_secret_manager("DATABASE_NAME"),
-            ),
-        )
-
-        cursor = conn.cursor()
-
-        # Execute the query
-        query = "SELECT uuid FROM langchain_pg_collection WHERE name = %s"
-        cursor.execute(query, (collection_name,))
-
-        # Fetch the result
-        result = cursor.fetchone()
-
-        # Close the cursor and connection
-
-        # Return the UUID if found
-        if result:
-            uuid = result[0]
-            logger.info(f"The UUID for name '{collection_name}' is: {uuid}")
-            update_query = """
-                UPDATE conversation
-                SET uuid = %s
-                WHERE id = %s
-                """
-            cursor.execute(update_query, (uuid, conversation_id))
-
-            conn.commit()
-
-            cursor.close()
-            conn.close()
-
-            return uuid
-        else:
-            logger.info(f"No UUID found for name '{collection_name}'")
-            return None
-    except Exception as e:
-        logger.info(f"An error occurred: {e}")
 
 
 def lambda_handler(*args):

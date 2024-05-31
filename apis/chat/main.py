@@ -22,6 +22,7 @@ from common.chatbot import Conversation
 from common.db import db
 from common.envs import get_secret_value_from_secret_manager, logger
 from dotenv import load_dotenv
+from notify.app import check_collection_name
 
 # Load environment variables
 load_dotenv()
@@ -121,11 +122,8 @@ def handle_user_query(request, client=None, connection_id=None):
 
         INITIAL_ROW[0] = user_input
 
-        collection_id, collection_name = check_collection_id_exist(
-            collection_id, time_stamp, user_id, db
-        )
-
-        collection_name_check = "joblog_" + str(collection_id)
+        collection_id = check_collection_name(collection_id, user_id, time_stamp, db)
+        collection_name_check = "joblog_" + str(user_id) + "_" + str(collection_id)
         exists = check_collection_name_exists(collection_name_check)
 
         logger.info("exists", exists)
