@@ -1,4 +1,4 @@
-# Bitcot rag-base-ai
+# Bitcot joblog-ai
 # Changelog
 
 
@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Added conversation id to create conversation for chat 
+
+### Added
+- Made code changes to upload file using Pre-signed url
 
 ### Added
 - Added Error logs in embeddings function 

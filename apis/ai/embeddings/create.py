@@ -62,7 +62,6 @@ def get_splits_of_different_types_of_format(file_path, s3_url, collection_name):
     Returns:
         list: A list of split documents to be processed.
     """
-
     split_docs = []
     FORMAT = file_path.split(".")[-1]
     logger.info(f"FORMAT.................{FORMAT}")
@@ -114,7 +113,7 @@ def insert_data_into_vector_db(file_path, s3_url, collection_name):
     output = None
     logger.info("Embedding Started...")
     logger.info(f"Collection Name: {collection_name}")
-    error_info = fetch_data_from_source(file_path, s3_url, collection_name)
+    split_docs, error_info = fetch_data_from_source(file_path, s3_url, collection_name)
     if error_info:
         output = f"Embedding failed with the error - {error_info}"
         logger.error(output)
