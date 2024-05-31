@@ -65,7 +65,6 @@ def handle_notify_request(*args):
             }, HTTPStatus.BAD_REQUEST.value
 
         file_name = user_file.file_name
-        file_name_without_time_stamp = file_name.split("_", 1)[-1]
         local_file_path = os.path.join(BASE_DIR, file_name)
 
         s3 = S3Manager()
@@ -78,7 +77,6 @@ def handle_notify_request(*args):
                 "message": "File not found",
             }, HTTPStatus.BAD_REQUEST.value
 
-        logger.info(f"File Processing Started - {file_name_without_time_stamp}")
         try:
             output = insert_data_into_vector_db(file_path, file_path)
             print("split_docs.....................", output)
