@@ -67,7 +67,6 @@ def get_splits_of_different_types_of_format(file_path, s3_url):
     Returns:
         list: A list of split documents to be processed.
     """
-
     split_docs = []
     FORMAT = file_path.split(".")[-1]
     logger.info(f"FORMAT.................{FORMAT}")

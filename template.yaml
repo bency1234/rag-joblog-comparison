@@ -516,6 +516,78 @@ Resources:
       DockerTag: python3.10-v1
     DependsOn: MetricSchedulerLogGroup
 
+  PresignedUrlFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-PresignedUrlFunction'
+      RetentionInDays: 14
+
+  PresignedUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !Ref LambdaExecutionRole
+      PackageType: Image
+      Architectures:
+        - x86_64
+      Events:
+        PresignedUrlPost:
+          Type: Api
+          Properties:
+            Path: /pre_signed_url
+            Method: POST
+            RestApiId: !Ref ApiDeployment
+        PresignedUrlOptions:
+          Type: Api
+          Properties:
+            Path: /pre_signed_url
+            Method: OPTIONS
+            RestApiId: !Ref ApiDeployment
+      Tags:
+        Environment: !Ref Environment
+        Function: "PresignedUrlFunction-RestApi"
+      Tracing: Active
+    Metadata:
+      Dockerfile: pre_signed_url.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: PresignedUrlFunctionLogGroup
+
+  NotifyFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-NotifyFunction'
+      RetentionInDays: 14
+
+  NotifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !Ref LambdaExecutionRole
+      PackageType: Image
+      Architectures:
+        - x86_64
+      Events:
+        NotifyPost:
+          Type: Api
+          Properties:
+            Path: /notify
+            Method: POST
+            RestApiId: !Ref ApiDeployment
+        NotifyOptions:
+          Type: Api
+          Properties:
+            Path: /notify
+            Method: OPTIONS
+            RestApiId: !Ref ApiDeployment
+      Tags:
+        Environment: !Ref Environment
+        Function: "NotifyFunction-RestApi"
+      Tracing: Active
+    Metadata:
+      Dockerfile: notify.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: NotifyFunctionLogGroup
+
 Outputs:
   EmbeddingFunctionUrl:
     Description: "API Gateway endpoint URL for Settings function"
