@@ -17,6 +17,7 @@ from ai.common.api_validations import (
 )
 from ai.common.utils.debug import INITIAL_ROW
 from ai.common.utils.stream import construct_bot_response, stream_response
+from ai.llms.constants import COLLECTION_NAME
 from ai.vector.config import get_current_file_vector_store, get_vector_store
 from common.chatbot import Conversation
 from common.db import db
@@ -68,7 +69,8 @@ def process_request(request):
     user_input = get_user_input(request)
     time_stamp = request.get(ChatAPIRequestParameters.TIME_STAMP.value, None)
     message_log = request.get(ChatAPIRequestParameters.MESSAGE_LOG.value, [])
-    collection_id = request.get(ChatAPIRequestParameters.COLLECTION_ID.value, None)
+    collection_id = request.get(ChatAPIRequestParameters.CONVERSATION_ID.value, None)
+
     user_id = request.get(ChatAPIRequestParameters.USER_ID.value, None)
     logger.info(f"request: {request}")
     return (
@@ -121,16 +123,22 @@ def handle_user_query(request, client=None, connection_id=None):
             return
 
         INITIAL_ROW[0] = user_input
-
-        collection_id = check_collection_name(collection_id, user_id, time_stamp, db)
+        collection_id, collection_name = check_collection_id_exist(
+            collection_id, time_stamp, user_id, db
+        )
+        logger.info(
+            f"collection_id: {collection_id}, collection_name: {collection_name}"
+        )
         collection_name_check = "joblog_" + str(user_id) + "_" + str(collection_id)
+        logger.info(f"collection_name_check: {collection_name_check}")
         exists = check_collection_name_exists(collection_name_check)
 
-        logger.info("exists", exists)
-
+        logger.info(f"exists {exists}")
         if exists == False:
+            logger.info("Entered Pre-Uploaded file")
             vector_store = get_vector_store()
         else:
+            logger.info("Entered current-Uploaded file")
             vector_store = get_current_file_vector_store(collection_name_check)
         (
             valid_query,
@@ -170,11 +178,17 @@ def handle_user_query(request, client=None, connection_id=None):
         row_id = call_write_to_db_api(record, None)
 
         stream_response(
-            {ChatAPIResponseParameters.ID.value: row_id}, client, connection_id
+            {ChatAPIResponseParameters.ID.value: row_id},
+            client,
+            connection_id,
+            collection_id,
         )
 
         stream_response(
-            {ChatAPIResponseParameters.MESSAGE_LOG.value: message_log},
+            {
+                ChatAPIResponseParameters.MESSAGE_LOG.value: message_log,
+                "conversation_id": collection_id,
+            },
             client,
             connection_id,
         )
@@ -205,21 +219,11 @@ conn = psycopg2.connect(
 def check_collection_name_exists(collection_name_check):
     try:
         # Connect to the PostgreSQL database
-
-        cursor = conn.cursor()
-
-        # Execute the query
         query = "SELECT EXISTS (SELECT 1 FROM langchain_pg_collection WHERE name = %s)"
-        cursor.execute(query, (collection_name_check,))
-
-        # Fetch the result
-        exists = cursor.fetchone()[0]
-
-        # Close the cursor and connection
-        cursor.close()
-        conn.close()
-
-        return exists
+        with conn.cursor() as cursor:
+            cursor.execute(query, (collection_name_check,))
+            exists = cursor.fetchone()[0]
+            return exists
 
     except Exception as e:
         error_info = capture_error_details(e)
@@ -242,6 +246,6 @@ def check_collection_id_exist(collection_id, time_stamp, user_id, db):
         db.session.commit()
         collection_id = new_conversation.id
         collection_name = new_conversation.collection_name
-
-    collection_name = "joblog"
+    else:
+        collection_name = COLLECTION_NAME
     return collection_id, collection_name
