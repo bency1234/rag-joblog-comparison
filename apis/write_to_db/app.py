@@ -1,8 +1,6 @@
 import traceback
 from http import HTTPStatus
 
-from ai.chat.apis import call_add_error_details_api
-from ai.chat.error_details_exception import capture_error_details
 from common.app_utils import get_app
 from common.chatbot import ChatbotData, Feedback
 from common.db import db
@@ -86,8 +84,9 @@ def write_to_db(*args):
     except Exception as e:
         traceback.print_exception(e)
         logger.error(f"An error occurred: {str(e)}")
-        error_info = capture_error_details(e)
-        call_add_error_details_api(user_input=None, error=error_info)
+        error_details = traceback.format_exc()
+
+        logger.info(f"Error type: {str(e)}, Error details: {error_details}")
         return (
             {
                 "status": False,
