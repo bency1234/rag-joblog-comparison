@@ -3,7 +3,6 @@ import os
 import time
 import traceback
 
-import psycopg2
 from ai.chat.apis import call_add_error_details_api, call_write_to_db_api
 from ai.chat.error_details_exception import capture_error_details
 from ai.chat.logic import GenerateResponse
@@ -17,13 +16,14 @@ from ai.common.api_validations import (
 )
 from ai.common.utils.debug import INITIAL_ROW
 from ai.common.utils.stream import construct_bot_response, stream_response
-from ai.llms.constants import COLLECTION_NAME
+from ai.llms.constants import COLLECTION_NAME, NEW_COLLECTION_NAME
 from ai.vector.config import get_current_file_vector_store, get_vector_store
 from common.chatbot import Conversation
 from common.db import db
 from common.envs import get_secret_value_from_secret_manager, logger
 from dotenv import load_dotenv
-from notify.app import check_collection_name
+
+from .database_conn import is_collection_name_exists
 
 # Load environment variables
 load_dotenv()
@@ -123,15 +123,10 @@ def handle_user_query(request, client=None, connection_id=None):
             return
 
         INITIAL_ROW[0] = user_input
-        collection_id, collection_name = check_collection_id_exist(
+        create_collection_name, collection_id = get_or_create_collection_id(
             collection_id, time_stamp, user_id, db
         )
-        logger.info(
-            f"collection_id: {collection_id}, collection_name: {collection_name}"
-        )
-        collection_name_check = "joblog_" + str(user_id) + "_" + str(collection_id)
-        logger.info(f"collection_name_check: {collection_name_check}")
-        exists = check_collection_name_exists(collection_name_check)
+        exists = is_collection_name_exists(create_collection_name)
 
         logger.info(f"exists {exists}")
         if exists == False:
@@ -139,7 +134,7 @@ def handle_user_query(request, client=None, connection_id=None):
             vector_store = get_vector_store()
         else:
             logger.info("Entered current-Uploaded file")
-            vector_store = get_current_file_vector_store(collection_name_check)
+            vector_store = get_current_file_vector_store(create_collection_name)
         (
             valid_query,
             raw_prompt,
@@ -200,38 +195,7 @@ def handle_user_query(request, client=None, connection_id=None):
         handle_system_error(user_input, client, connection_id)
 
 
-conn = psycopg2.connect(
-    host=os.environ.get(
-        "PGVECTOR_HOST", get_secret_value_from_secret_manager("DATABASE_HOST")
-    ),
-    user=os.environ.get(
-        "PGVECTOR_USER", get_secret_value_from_secret_manager("DATABASE_USER")
-    ),
-    password=os.environ.get(
-        "PGVECTOR_PASSWORD", get_secret_value_from_secret_manager("DATABASE_PASS")
-    ),
-    database=os.environ.get(
-        "PGVECTOR_DATABASE", get_secret_value_from_secret_manager("DATABASE_NAME")
-    ),
-)
-
-
-def check_collection_name_exists(collection_name_check):
-    try:
-        # Connect to the PostgreSQL database
-        query = "SELECT EXISTS (SELECT 1 FROM langchain_pg_collection WHERE name = %s)"
-        with conn.cursor() as cursor:
-            cursor.execute(query, (collection_name_check,))
-            exists = cursor.fetchone()[0]
-            return exists
-
-    except Exception as e:
-        error_info = capture_error_details(e)
-        call_add_error_details_api(user_input=None, error=error_info)
-        logger.info(f"An error occurred: {e}")
-
-
-def check_collection_id_exist(collection_id, time_stamp, user_id, db):
+def get_or_create_collection_id(collection_id, time_stamp, user_id, db):
     if not collection_id:
         new_conversation = Conversation()
 
@@ -248,4 +212,11 @@ def check_collection_id_exist(collection_id, time_stamp, user_id, db):
         collection_name = new_conversation.collection_name
     else:
         collection_name = COLLECTION_NAME
-    return collection_id, collection_name
+    logger.info(f"collection_id: {collection_id}, collection_name: {collection_name}")
+
+    create_collection_name = (
+        NEW_COLLECTION_NAME + str(user_id) + "_" + str(collection_id)
+    )
+    logger.info(f"collection_name_check: {create_collection_name}")
+
+    return create_collection_name, collection_id
