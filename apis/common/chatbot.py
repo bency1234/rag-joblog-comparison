@@ -107,3 +107,14 @@ class ChatbotMetrics(db.Model):
     time_stamp = db.Column(db.DateTime())
     created_at = db.Column(db.DateTime, default=func.now())
     updated_at = db.Column(db.DateTime, default=func.now(), onupdate=func.now())
+
+
+class Conversation(db.Model):
+    __tablename__ = "conversation"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer())
+    uuid = db.Column(db.Text, unique=True, nullable=True)
+    collection_name = db.Column(db.Text())
+    time_stamp = db.Column(db.DateTime())
+    created_at = db.Column(db.DateTime, default=func.now())
+    updated_at = db.Column(db.DateTime, default=func.now(), onupdate=func.now())

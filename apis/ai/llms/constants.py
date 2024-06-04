@@ -67,6 +67,8 @@ SEARCH_KWARGS = {
     "k": NUMBER_OF_DOCUMENTS_TO_BE_RETURNED,
 }
 SEARCH_TYPE = "similarity_score_threshold"
+NEW_COLLECTION_NAME = "joblog_"
+
 #################################  Embeddings Constants ends here #################################
 # Define CONTENT_TYPES dictionary
 CONTENT_TYPES = {

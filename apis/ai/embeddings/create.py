@@ -3,12 +3,7 @@
 from ai.chat.apis import call_add_error_details_api
 from ai.chat.error_details_exception import capture_error_details
 from ai.common.constants import CONNECTION_STRING
-from ai.llms.constants import (
-    CHUNK_SIZE_LIMIT,
-    COLLECTION_NAME,
-    EMBEDDINGS_FUNCTION,
-    MAX_CHUNK_OVERLAP,
-)
+from ai.llms.constants import CHUNK_SIZE_LIMIT, EMBEDDINGS_FUNCTION, MAX_CHUNK_OVERLAP
 from common.envs import get_secret_value_from_secret_manager, logger
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
@@ -38,7 +33,7 @@ pg_credentials = {
 }
 
 
-def fetch_data_from_source(file_path, s3_url):
+def fetch_data_from_source(file_path, s3_url, collection_name):
     """Get data from either PostgreSQL, or read a file based on FORMAT.
 
     Returns:
@@ -49,7 +44,7 @@ def fetch_data_from_source(file_path, s3_url):
     try:
         logger.info("File Format Enabled")
         split_docs, error_info = get_splits_of_different_types_of_format(
-            file_path, s3_url
+            file_path, s3_url, collection_name
         )
         logger.info(f"error_info.................{error_info}")
         logger.info(f"file_path.................{file_path}")
@@ -61,7 +56,7 @@ def fetch_data_from_source(file_path, s3_url):
     return split_docs, error
 
 
-def get_splits_of_different_types_of_format(file_path, s3_url):
+def get_splits_of_different_types_of_format(file_path, s3_url, collection_name):
     """Function that processes different file formats and splits their content.
 
     Returns:
@@ -98,7 +93,7 @@ def get_splits_of_different_types_of_format(file_path, s3_url):
         PGVector.from_documents(
             embedding=EMBEDDINGS_FUNCTION,
             documents=split_docs,
-            collection_name=COLLECTION_NAME,
+            collection_name=collection_name,
             connection_string=CONNECTION_STRING,
         )
         logger.info(
@@ -111,14 +106,15 @@ def get_splits_of_different_types_of_format(file_path, s3_url):
         return split_docs, error_info
 
 
-def insert_data_into_vector_db(file_path, s3_url):
+def insert_data_into_vector_db(file_path, s3_url, collection_name):
     """
     Main function to get data from the source, create embeddings, and insert them into the database.
     """
     output = None
     logger.info("Embedding Started...")
-    logger.info(f"Collection Name: {COLLECTION_NAME}")
-    error_info = fetch_data_from_source(file_path, s3_url)
+    logger.info(f"Collection Name: {collection_name}")
+    split_docs, error_info = fetch_data_from_source(file_path, s3_url, collection_name)
+    logger.info(f"split_docs.................{split_docs}")
     if error_info:
         output = f"Embedding failed with the error - {error_info}"
         logger.error(output)

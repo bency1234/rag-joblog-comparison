@@ -43,7 +43,7 @@ TOGGLE_ON_SYSTEM_PROMPT = """
     1. Strictly your response should be in a markdown language format
     2. Return source for all the questions which you answer from the document
     3. Track user queries to provide context-aware responses. Respond with a summary of recent interactions upon request.
-    4. Please refrain from citing external sources for questions beyond the document's scope, as well as for questions regarding greetings. Strictly do not provide Sources as heading for outside related questions only have the response for the query that has been asked.
+    4. Please refrain from citing external sources for questions beyond the document's scope, as well as for questions regarding greetings. Strictly do not provide Sources as heading for the questions which are not from the document only have the response for the query that has been asked.
     
     Summaries: {summaries}
     """

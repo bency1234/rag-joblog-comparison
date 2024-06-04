@@ -119,7 +119,10 @@ class GenerateResponse:
         client_id: None,
         connection_id: None,
         use_rag: bool,
+        collection_id: str,
     ):
+        logger.info(f"collection_id: {collection_id}")
+
         bot_response = ""
         raw_prompt, bot_response, source_documents, total_cost = self.chat_completion(
             user_input, message_log, client_id, connection_id, use_rag

@@ -1,8 +1,8 @@
 import json
 
 import boto3
+from chat.main import handle_user_query
 from common.envs import get_secret_value_from_secret_manager, logger
-from main import handle_user_query
 
 # Load environment variables
 WS_ENDPOINT = get_secret_value_from_secret_manager("WS_ENDPOINT")

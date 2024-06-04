@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import re
+import traceback
 from datetime import datetime
 from http import HTTPStatus
 
@@ -82,12 +83,12 @@ def handle_csv_file(event):
     return column_name, error
 
 
-def handle_uploaded_file_success(filename, file_path):
+def handle_uploaded_file_success(filename, file_path, collection_name):
     with app.app_context():
         s3_url = upload_to_s3(filename, file_path)
-        output = insert_data_into_vector_db(file_path, s3_url)
+        output = insert_data_into_vector_db(file_path, s3_url, collection_name)
         user_file = UserFiles(file_name=file_path, embedded=True, s3_url=s3_url)
-        print("USER FILE", user_file)
+        logger.info(f"USER FILE: {user_file}")
         db.session.add(user_file)
         db.session.commit()
         return {"message": output, "s3_url": s3_url}
@@ -101,21 +102,29 @@ def validate_filename(filename):
     return re.match(r"^[a-zA-Z0-9_.-]+$", filename) is not None
 
 
-def handle_valid_file(safe_filename, file_path, file_content):
-    logger.info(f"safe_filename.....{safe_filename}")
-    logger.info(f"file_path................{file_path}")
-    logger.info(f"file_content................{file_content}")
-    file_format = safe_filename.split(".")[-1]
-    if file_format in ALLOWED_EXTENSIONS:
-        logger.info("Entered File Format")
-        with open(file_path, "wb") as file:
-            file.write(file_content)
-        handle_uploaded_file_success(safe_filename, file_path)
-        return {"status": True, "success": True}, HTTPStatus.OK.value
-    else:
-        return generate_bad_request_response(
-            f"Allowed extensions are {','.join(ALLOWED_EXTENSIONS)}"
-        )
+def handle_valid_file(
+    safe_filename, file_path, file_content, collection_name, conversation_id
+):
+    with app.app_context():
+        logger.info(f"safe_filename.....{safe_filename}")
+        logger.info(f"file_path................{file_path}")
+        logger.info(f"file_content................{file_content}")
+        file_format = safe_filename.split(".")[-1]
+        if file_format in ALLOWED_EXTENSIONS:
+            logger.info("Entered File Format")
+            with open(file_path, "wb") as file:
+                file.write(file_content)
+            handle_uploaded_file_success(safe_filename, file_path, collection_name)
+
+            return {
+                "status": True,
+                "success": True,
+                "conversation_id": conversation_id,
+            }, HTTPStatus.OK.value
+        else:
+            return generate_bad_request_response(
+                f"Allowed extensions are {','.join(ALLOWED_EXTENSIONS)}"
+            )
 
 
 class InvalidFilePath(Exception):
@@ -142,42 +151,50 @@ def path_traversal_check(file_name):
 
 
 def lambda_handler1(*args):
-    event = args[0]
-    file_name = ""
-    file_path = ""
-    try:
-        # Check if the body is empty or if the X-Filename header is missing
-        if "body" not in event or not event["body"]:
-            return generate_bad_request_response(
-                "No file content provided. Please pass the file content."
-            )
-        # Decode the file content if it's base64 encoded
-        if event.get("isBase64Encoded", False):
-            file_content = base64.b64decode(event["body"])
-        else:
-            file_content = event["body"]
-        # Extract the filename from the headers
-        file_name = event["headers"].get("X-Filename")
-        if not file_name:
-            return generate_bad_request_response("X-Filename headers is missing")
-        else:
-            safe_filename = sanitize_filename(file_name)
-            if not validate_filename(safe_filename):
-                return generate_bad_request_response("Invalid file name")
+    with app.app_context():
+        event = args[0]
+        file_name = ""
+        file_path = ""
+        try:
+            # Check if the body is empty or if the X-Filename header is missing
+            if "body" not in event or not event["body"]:
+                return generate_bad_request_response(
+                    "No file content provided. Please pass the file content."
+                )
+            # Decode the file content if it's base64 encoded
+            if event.get("isBase64Encoded", False):
+                file_content = base64.b64decode(event["body"])
             else:
-                file_path, error = path_traversal_check(safe_filename)
-                if error:
-                    return generate_bad_request_response(error)
-        return handle_valid_file(file_name, file_path, file_content)
-    except Exception:
-        import traceback
+                file_content = event["body"]
+            # Extract the filename from the headers
+            file_name = event["headers"].get("X-Filename")
+            conversation_id = event["headers"].get("Conversation-Id")
+            time_stamp = event["headers"].get("time_stamp")
+            user_id = event["headers"].get("User-Id")
 
-        return {
-            "status": False,
-            "errors": json.dumps(traceback.format_exc().strip()),
-        }, HTTPStatus.INTERNAL_SERVER_ERROR.value
-    finally:
-        secure_file_deletion(file_path)
+            logger.info(
+                f"user_id: {user_id}, time_stamp: {time_stamp}, conversation_id: {conversation_id}"
+            )
+            if not file_name:
+                return generate_bad_request_response("X-Filename headers is missing")
+            else:
+                safe_filename = sanitize_filename(file_name)
+                if not validate_filename(safe_filename):
+                    return generate_bad_request_response("Invalid file name")
+                else:
+                    file_path, error = path_traversal_check(safe_filename)
+                    if error:
+                        return generate_bad_request_response(error)
+            return handle_valid_file(
+                file_name, file_path, file_content, conversation_id
+            )
+        except Exception:
+            return {
+                "status": False,
+                "errors": json.dumps(traceback.format_exc().strip()),
+            }, HTTPStatus.INTERNAL_SERVER_ERROR.value
+        finally:
+            secure_file_deletion(file_path)
 
 
 def lambda_handler(*args):

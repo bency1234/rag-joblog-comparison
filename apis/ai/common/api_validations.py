@@ -40,6 +40,7 @@ class ChatAPIRequestParameters(Enum):
     USER_ID = "user_id"
     USE_RAG = "use_rag"
     CONTINUE_CHAT = CONTINUE_CHAT_STR
+    CONVERSATION_ID = "conversation_id"
 
 
 class ChatAPIResponseParameters(Enum):
