@@ -9,6 +9,7 @@ from ai.common.constants import (
     S3FileNotFoundError,
     UserFileNotFoundError,
 )
+from ai.common.context_manager import database_operation
 from ai.embeddings.create import insert_data_into_vector_db
 from ai.llms.constants import NEW_COLLECTION_NAME
 from common.app_utils import get_app
@@ -28,14 +29,16 @@ class FileProcessingErrorException(Exception):
         super().__init__(message)
 
 
-def log_error_in_db(user_input, error_type, error_details, db):
-    error_log = ChatError(
-        user_input=user_input, error_type=error_type, error_details=error_details
-    )
+def log_error_in_db(user_input, error_type, error_details):
     try:
-        with db.session() as session:
-            session.add(error_log)
-            session.commit()
+        error_log = database_operation(
+            "insert",
+            obj=ChatError,
+            user_input=user_input,
+            error_type=error_type,
+            error_details=error_details,
+        )
+        error_log.__enter__()
         logger.info("Error details added successfully")
     except Exception as e:
         logger.error(f"Failed to log error details: {e}")
@@ -68,7 +71,7 @@ def user_and_file_exists(u_id, file_path):
     if not user:
         error_message = f"User with ID {u_id} not found"
         logger.error(error_message)
-        log_error_in_db(u_id, USER_NOT_FOUND, error_message, db)
+        log_error_in_db(u_id, USER_NOT_FOUND, error_message)
         return {
             "success": False,
             "message": USER_NOT_FOUND,
@@ -78,7 +81,7 @@ def user_and_file_exists(u_id, file_path):
     if not user_file:
         error_message = f"File with path {file_path} not found for user {u_id}"
         logger.error(error_message)
-        log_error_in_db(file_path, UserFileNotFoundError, error_message, db)
+        log_error_in_db(file_path, UserFileNotFoundError, error_message)
         return {
             "success": False,
             "message": FILE_NOT_FOUND,
@@ -91,7 +94,7 @@ def s3_file_exists(file_path, local_file_path):
     if not s3.download_csv(urlparse(file_path).path[1:], local_file_path):
         error_message = S3FileNotFoundError
         logger.error(error_message)
-        log_error_in_db(file_path, S3FileNotFoundError, error_message, db)
+        log_error_in_db(file_path, S3FileNotFoundError, error_message)
         return {
             "success": False,
             "message": FILE_NOT_FOUND,
@@ -122,7 +125,7 @@ def handle_notify_request(*args):
                 f"user_id: {user_id}, time_stamp: {time_stamp}, conversation_id: {conversation_id}"
             )
             collection_name, conversation_id = check_collection_name(
-                conversation_id, user_id, time_stamp, db
+                conversation_id, user_id, time_stamp
             )
             output = insert_data_into_vector_db(file_path, file_path, collection_name)
             if output:
@@ -140,7 +143,7 @@ def handle_notify_request(*args):
             logger.error(f"File processing error: {e}")
             traceback_info = traceback.format_exc()
             add_file_error_details_in_user_info(user_file, traceback_info, db)
-            log_error_in_db(file_path, type(e).__name__, traceback_info, db)
+            log_error_in_db(file_path, type(e).__name__, traceback_info)
             return {"processed": False}, HTTPStatus.INTERNAL_SERVER_ERROR.value
 
         finally:
@@ -152,7 +155,7 @@ def handle_notify_request(*args):
         error_type = type(e).__name__
         stack_trace = traceback.format_exc()
         error_details = f"errorMessage: {error_message}, stackTrace: {stack_trace}"
-        log_error_in_db("NotifyRequest", error_type, error_details, db)
+        log_error_in_db("NotifyRequest", error_type, error_details)
         return {"error": "Something went wrong"}, HTTPStatus.INTERNAL_SERVER_ERROR.value
 
 
@@ -163,21 +166,18 @@ def lambda_handler(*args):
         return call_fn(handle_notify_request, event)
 
 
-def check_collection_name(conversation_id, user_id, time_stamp, db):
+def check_collection_name(conversation_id, user_id, time_stamp):
     if not conversation_id:
-        with db.session() as session:
-            new_conversation = Conversation()
-            new_conversation.time_stamp = time_stamp
-            new_conversation.user_id = user_id
-            session.add(new_conversation)
-            session.commit()
+        with database_operation(
+            "insert", obj=Conversation, time_stamp=time_stamp, user_id=user_id
+        ) as new_conversation:
+            conversation_id = new_conversation.id
+            logger.info(f"New conversation created: {conversation_id}")
 
             new_conversation.collection_name = (
-                NEW_COLLECTION_NAME + str(user_id) + "_" + str(new_conversation.id)
+                NEW_COLLECTION_NAME + str(user_id) + "_" + str(conversation_id)
             )
-            session.commit()
             collection_name = new_conversation.collection_name
-            conversation_id = new_conversation.id
     else:
         collection_name = (
             NEW_COLLECTION_NAME + str(user_id) + "_" + str(conversation_id)
