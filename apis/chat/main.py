@@ -4,6 +4,7 @@ import time
 import traceback
 
 from ai.chat.apis import call_add_error_details_api, call_write_to_db_api
+from ai.chat.database_conn import is_collection_name_exists
 from ai.chat.error_details_exception import capture_error_details
 from ai.chat.logic import GenerateResponse
 from ai.chat.validation import validate_user_input
@@ -18,7 +19,6 @@ from ai.common.utils.debug import INITIAL_ROW
 from ai.common.utils.stream import construct_bot_response, stream_response
 from ai.llms.constants import COLLECTION_NAME, NEW_COLLECTION_NAME
 from ai.vector.config import get_current_file_vector_store, get_vector_store
-from chat.database_conn import is_collection_name_exists
 from common.chatbot import Conversation
 from common.db import db
 from common.envs import get_secret_value_from_secret_manager, logger
