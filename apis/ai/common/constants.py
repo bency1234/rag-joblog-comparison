@@ -38,16 +38,6 @@ CONNECTION_STRING = PGVector.connection_string_from_db_params(
 )
 ################################# Database connection constants ends here #################################
 
-
-################################# Throttle constants starts here #################################
-THROTTLE_MSG = (
-    lambda time: f"Sorry, we are currently limiting the number of requests to ensure a smooth experience for all users. "
-    f"Please try again in {time} seconds. Thank you for understanding!"
-)
-THROTTLE_CODE = 429
-THROTTLE_PERIOD = 60
-################################# Throttle constants ends here #################################
-
 ################################# Stream constants starts here #################################
 RECEIVE_REQUEST = "chat"
 EMIT_RESPONSE = "stream"

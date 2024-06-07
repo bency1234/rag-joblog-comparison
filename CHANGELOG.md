@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added conversation id to create conversation for chat 
 
 ### Added
+- Add redis server to the code
+
+### Added
 - Made code changes to upload file using Pre-signed url
 
 ### Added
