@@ -190,7 +190,7 @@ Resources:
   SocketApiFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName:  !Sub '/aws/apigateway/${Stack}-${Environment}-SocketApiFunction-logs'
+      LogGroupName: !Join ['/', ['/aws/lambda', !Ref SocketApi]]
       RetentionInDays: 14  
 
   SocketApiFunction:
@@ -206,7 +206,7 @@ Resources:
       Tracing: Active
       Environment:
         Variables:
-          LOG_GROUP_NAME: !Sub '/aws/apigateway/${Stack}-${Environment}-SocketApiFunction-logs'
+          LOG_GROUP_NAME: !Ref MetricSchedulerLogGroup
     Metadata:
       Dockerfile: chat.Dockerfile
       DockerContext: apis/
@@ -345,20 +345,19 @@ Resources:
       DockerTag: python3.10-v1
     DependsOn: FeedbackFunctionLogGroup
 
-      
   EmbeddingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-EmbeddingFunctionLogGroup'
-      RetentionInDays: 14
+      RetentionInDays: 14  
 
   EmbeddingFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Role: !Ref LambdaExecutionRole
       PackageType: Image
       Architectures:
-        - x86_64
+      - x86_64
+      Role: !Ref LambdaExecutionRole
       Events:
         EmbeddingPost:
           Type: Api
@@ -384,7 +383,6 @@ Resources:
       DockerContext: apis/
       DockerTag: python3.10-v1
     DependsOn: EmbeddingFunctionLogGroup
-
 
   WriteToDBFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -452,12 +450,11 @@ Resources:
       DockerTag: python3.10-v1
     DependsOn: AddErrorDetailsLogGroup
 
-      
   EvaluationFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-EvaluationFunctionLogGroup'
-      RetentionInDays: 14
+      RetentionInDays: 14  
 
   EvaluationFunction:
     Type: AWS::Serverless::Function
@@ -465,7 +462,7 @@ Resources:
       Role: !Ref LambdaExecutionRole
       PackageType: Image
       Architectures:
-        - x86_64
+      - x86_64
       Events:
         EvaluationGet:
           Type: Api
