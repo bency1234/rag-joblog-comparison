@@ -6,6 +6,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+### Fixed 
+- Fixed the issue app.app_context() on chat interface
+
+### Fixed 
+- Fixed the issue "Unable to import module 'app': No module named 'chat', 
+
+### Fixed
+- Fixed the issue on server for chat interface ["Unable to import module 'app': attempted relative import with no known parent package"]
+
+### Fixed
+- Fixed the issue on server where there were import statement error ["Unable to import module 'app': No module named 'chat'"]
+
+### Added
+- Added conversation id to create conversation for chat 
+
 ### Added
 - Add redis server to the code
 

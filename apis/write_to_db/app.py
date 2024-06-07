@@ -84,6 +84,9 @@ def write_to_db(*args):
     except Exception as e:
         traceback.print_exception(e)
         logger.error(f"An error occurred: {str(e)}")
+        error_details = traceback.format_exc()
+
+        logger.info(f"Error type: {str(e)}, Error details: {error_details}")
         return (
             {
                 "status": False,

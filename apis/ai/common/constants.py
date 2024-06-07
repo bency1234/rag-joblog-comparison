@@ -42,3 +42,8 @@ CONNECTION_STRING = PGVector.connection_string_from_db_params(
 RECEIVE_REQUEST = "chat"
 EMIT_RESPONSE = "stream"
 ################################# Stream constants ends here #################################
+
+FILE_NOT_FOUND = "File not found"
+USER_NOT_FOUND = "User not found"
+UserFileNotFoundError = "User FileNot Found Error"
+S3FileNotFoundError = "S3 File Not Found Error"
