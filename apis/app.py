@@ -71,7 +71,7 @@ if __name__ == "__main__":
     app = create_app()
 
     with app.app_context():
-        upgrade()
+        # upgrade()
         seeder = FlaskSeeder()
         seeder.init_app(app, db)
 
