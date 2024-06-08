@@ -9,7 +9,7 @@ from common.app_utils import get_app
 from common.db import db
 
 from common.envs import get_secret_value_from_secret_manager, logger
-from common.utils.constant import THROTTLE_CODE, THROTTLE_MSG, WS_ENDPOINT
+from common.utils.constants import THROTTLE_CODE, THROTTLE_MSG, WS_ENDPOINT
 from common.utils.redis import get_ip_address, throttle_request_by_ip
 from main import handle_user_query
 

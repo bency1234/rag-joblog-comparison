@@ -1,6 +1,6 @@
 import redis
 from common.envs import logger
-from common.utils.constant import (
+from common.utils.constants import (
     REDIS_HOST,
     REDIS_PORT,
     REQUESTS_PER_MINUTE,
