@@ -78,7 +78,7 @@ def lambda_handler(*args):
                 user_message = event_data["message"]
 
                 handle_user_query(user_message, client, connection_id)
-            return {"statusCode": 200, "body": "Success"}
+        return {"statusCode": 200, "body": "Success"}
 
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}", exc_info=True)
