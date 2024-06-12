@@ -1,0 +1,115 @@
+name: Deploy-Backend-Lambda-dev
+
+on:
+  push:
+    branches:
+      - dev  # Adjust this to match your main branch
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}                  
+  SECRET_NAME: ${{ vars.SECRET_NAME }}
+  CI: ${{ vars.CI }}
+  SecurityGroup: ${{ vars.SECURITYGROUP }}
+  SubnetOne: ${{ vars.SUBNETONE }}
+  SubnetTwo: ${{ vars.SUBNETTWO }}
+  SubnetThree: ${{ vars.SUBNETTHREE }}
+  LambdaExecutionRole: ${{ vars.LAMBDAEXECUTIONROLE }}
+  RestApiDomain: rag-base-restapi.bitcotapps.com
+  SocketApiDomain: rag-base-socketapi.bitcotapps.com
+  RestApiCertArn: ${{ vars.RESTAPICERTARN }}
+  SocketApiCertArn: ${{ vars.SOCKETAPICERTARN }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  STACK: ${{ vars.STACK }}
+  ENVIRONMENT: ${{ vars.ENVIRONMENT }}
+
+permissions:
+  contents: read        
+
+jobs:
+  deploy:
+    name: Deploy Lambda Function
+    runs-on: ubuntu-latest  # You can change this to your preferred environment
+    environment: dev
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # - name: Clear Python local cache
+      #   run: |
+      #     sudo rm -rf /opt/hostedtoolcache/Python
+      #     sudo rm -rf /opt/hostedtoolcache/Python_*
+
+      # - name: Set up Python 3.10
+      #   uses: actions/setup-python@v2
+      #   with:
+      #     python-version: 3.10
+
+      - name: setup python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.x"
+          cache: "pip"
+        env:
+          AGENT_TOOLSDIRECTORY: /opt/hostedtoolache
+
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Install Python dependencies
+        run: pip install flask flask_sqlalchemy flask_migrate psycopg2-binary
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}  
+      
+      - name: Run Migration
+        run: |
+          echo "Retrieving secrets from AWS Secrets Manager using provided SECRET_NAME..."
+          secrets=$(aws secretsmanager get-secret-value --secret-id $SECRET_NAME --query SecretString --output text)
+          export DATABASE_USER=$(echo $secrets | jq -r '.DATABASE_USER')
+          export DATABASE_PASS=$(echo $secrets | jq -r '.DATABASE_PASS')
+          export DATABASE_HOST=$(echo $secrets | jq -r '.DATABASE_HOST')
+          export DATABASE_PORT=$(echo $secrets | jq -r '.DATABASE_PORT')
+          export DATABASE_NAME=$(echo $secrets | jq -r '.DATABASE_NAME')
+          
+          echo "Installing Python dependencies..."
+          cd apis/common && pip install -r requirements.txt && cd ..
+          echo "Executing migration script..."
+          python app.py
+          cd ..
+
+      - name: Build Lambda function with AWS SAM
+        run: sam build
+
+      - name: Deploy Application
+        run: |
+          sam deploy --template-file .aws-sam/build/template.yaml \
+            --stack-name ${{ env.STACK }}-${{ env.ENVIRONMENT }}-sls-api \
+            --capabilities CAPABILITY_IAM \
+            --region ${{ env.AWS_REGION }} \
+            --parameter-overrides \
+              ParameterKey=SecretName,ParameterValue=${{env.SECRET_NAME}} \
+              ParameterKey=CI,ParameterValue=${{env.CI}} \
+              ParameterKey=SecurityGroup,ParameterValue=${{env.SecurityGroup}} \
+              ParameterKey=SubnetOne,ParameterValue=${{env.SubnetOne}} \
+              ParameterKey=SubnetTwo,ParameterValue=${{env.SubnetTwo}} \
+              ParameterKey=SubnetThree,ParameterValue=${{env.SubnetThree}} \
+              ParameterKey=LambdaExecutionRole,ParameterValue=${{env.LambdaExecutionRole}} \
+              ParameterKey=RestApiDomain,ParameterValue=${{env.RestApiDomain}} \
+              ParameterKey=SocketApiDomain,ParameterValue=${{env.SocketApiDomain}} \
+              ParameterKey=RestApiCertArn,ParameterValue=${{env.RestApiCertArn}} \
+              ParameterKey=SocketApiCertArn,ParameterValue=${{env.SocketApiCertArn}} \
+              ParameterKey=Environment,ParameterValue=${{env.ENVIRONMENT}} \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --resolve-s3 \
+            --resolve-image-repos \
+            --disable-rollback \
+            --debug
