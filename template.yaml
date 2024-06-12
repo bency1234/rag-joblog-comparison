@@ -1,0 +1,612 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for RAG base Rest & Socket API
+
+Parameters:
+  CI:
+    Type: String
+    Description: Value of the CI
+  Stack:
+    Type: String
+    Description: Value of the Stack
+  Environment:
+    Type: String
+    Description: Value of the Environment
+  SecretName:
+    Type: String
+    Description: Name of the secret
+  SecurityGroup:
+    Type: String
+    Description: Security Group ID for the Lambda function.
+  SubnetOne:
+    Type: String
+    Description: First Subnet ID for the Lambda function.
+  SubnetTwo:
+    Type: String
+    Description: Second Subnet ID for the Lambda function.
+  SubnetThree:
+    Type: String
+    Description: Third Subnet ID for the Lambda function.
+  SubnetFour:
+    Type: String
+    Description: Fourth Subnet ID for the Lambda function.
+  LambdaExecutionRole:
+    Type: String
+    Description: Arn of the Lambda Execution role
+  RestApiDomain:
+    Type: String
+    Description: RestAPI Custom Domain name
+  SocketApiDomain:
+    Type: String
+    Description: SocketAPI Custom Domain name
+  RestApiCertArn:
+    Type: String
+    Description: ACM Certificate Arn for RestAPI
+  SocketApiCertArn:
+    Type: String
+    Description: ACM Certificate Arn for SocketAPI
+  SocketApiName:
+    Type: String
+    Description: Socket API Name
+
+Globals:
+  Api:
+    BinaryMediaTypes:
+      - "*/*"
+
+  Function:
+    Environment:
+      Variables:
+        CI: !Ref CI
+        ENVIRONMENT: !Ref Environment
+        SEC_NAME: !Ref SecretName
+        SEC_SERVICE: "secretsmanager"
+        REQUESTS_PER_MINUTE: 6
+        DATABASE_USER: ""
+        DATABASE_PASS: ""
+        DATABASE_HOST: ""
+        DATABASE_NAME: ""
+        DATABASE_PORT: ""
+        CORS_ORIGIN: ""
+        BUCKET_NAME: ""
+        CLOUDFRONT_URL: ""
+        OPENAI_API_KEY: ""
+        FILE_FORMAT: ""
+        USERNAME: ""
+        PASSWORD: ""
+        ADMIN_USERNAME: ""
+        ADMIN_PASSWORD: ""
+    Timeout: 180
+    EphemeralStorage: 
+      Size: 1024
+    MemorySize: 1024
+    LoggingConfig:
+      LogFormat: JSON
+    VpcConfig:
+      SubnetIds:
+        - !Ref SubnetOne
+        - !Ref SubnetTwo
+        - !Ref SubnetThree
+        - !Ref SubnetFour
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+
+Resources:
+  RestApiCustomDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !Ref RestApiDomain
+      CertificateArn: !Ref RestApiCertArn
+      EndpointConfiguration:
+        Types:
+          - "EDGE"
+      SecurityPolicy: TLS_1_2
+    DependsOn: ApiDeployment
+
+  RestApiBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName: !Ref RestApiDomain
+      RestApiId: !Ref ApiDeployment
+      Stage: !Ref Environment
+    DependsOn:
+      - RestApiCustomDomain
+      - ApiDeployment
+
+  SocketApiDomainName:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: !Ref SocketApiDomain
+      DomainNameConfigurations:
+        - CertificateArn: !Ref SocketApiCertArn
+          EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
+    DependsOn: SocketApi
+
+  SocketApiBasePathMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Properties:
+      ApiId: !Ref SocketApi
+      DomainName: !Ref SocketApiDomain
+      Stage: !Ref Stage
+    DependsOn:
+      - SocketApiDomainName
+      - Stage
+
+  ApiDeployment:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      TracingEnabled: true
+      MinimumCompressionSize: 0
+      EndpointConfiguration:
+        Type: EDGE
+      AccessLogSetting:
+        DestinationArn: !GetAtt RestApiGatewayAccessLogGroup.Arn
+        Format: >-
+          {"requestId":"$context.requestId", "ip": "$context.identity.sourceIp",
+          "caller":"$context.identity.caller",
+          "user":"$context.identity.user","requestTime":"$context.requestTime",
+          "eventType":"$context.eventType","routeKey":"$context.routeKey",
+          "status":"$context.status","connectionId":"$context.connectionId"}
+
+  ApiGatewayCloudWatchLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ApiGatewayAccessLogsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+
+  RestApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-restapi-access-logs'
+      RetentionInDays: 14
+
+  SocketApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${Stack}-${Environment}-socketapi-access-logs'
+      RetentionInDays: 14
+
+  SocketApiFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['/', ['/aws/lambda', !Ref SocketApi]]
+      RetentionInDays: 14  
+
+  SocketApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+      - x86_64
+      Role: !Ref LambdaExecutionRole
+      Tags:
+        Environment: !Ref Environment
+        Function: "SocketApi"
+      Tracing: Active
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Ref MetricSchedulerLogGroup
+    Metadata:
+      Dockerfile: chat.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: SocketApiFunctionLogGroup
+
+  SocketApiFunctionPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - SocketApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SocketApiFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SocketApi}/Prod/*
+
+  SocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Ref SocketApiName
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+
+  SendRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SocketApi
+      RouteKey: sendMessage
+      AuthorizationType: NONE
+      OperationName: SendRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref SendInteg
+
+  SendInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref SocketApi
+      Description: Send Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SocketApiFunction.Arn}/invocations
+
+  Deployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+    - SendRoute
+    Properties:
+      ApiId: !Ref SocketApi
+
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: Prod
+      Description: Prod Stage
+      DeploymentId: !Ref Deployment
+      ApiId: !Ref SocketApi
+      AccessLogSettings:
+        DestinationArn: !GetAtt SocketApiGatewayAccessLogGroup.Arn
+        Format: >-
+          {"requestId":"$context.requestId", "ip": "$context.identity.sourceIp",
+          "caller":"$context.identity.caller",
+          "user":"$context.identity.user","requestTime":"$context.requestTime",
+          "eventType":"$context.eventType","routeKey":"$context.routeKey",
+          "status":"$context.status","connectionId":"$context.connectionId"}
+
+  LoginFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-LoginFunction'
+      RetentionInDays: 14
+
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !Ref LambdaExecutionRole
+      PackageType: Image
+      Architectures:
+      - x86_64
+      Events:
+        LoginPost:
+          Type: Api
+          Properties:
+            Path: /login
+            Method: POST
+            RestApiId: !Ref ApiDeployment
+        LoginOptions:
+          Type: Api
+          Properties:
+            Path: /login
+            Method: OPTIONS
+            RestApiId: !Ref ApiDeployment
+      Tags:
+        Environment: !Ref Environment
+        Function: "LoginFunction-RestApi"
+      Tracing: Active
+    Metadata:
+      Dockerfile: login.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: LoginFunctionLogGroup
+
+  FeedbackFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-FeedbackFunction'
+      RetentionInDays: 14
+
+  FeedbackFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+      - x86_64
+      Role: !Ref LambdaExecutionRole
+      Events:
+        FeedbackPost:
+          Type: Api
+          Properties:
+            Path: /api/feedback/
+            Method: POST
+            RestApiId: !Ref ApiDeployment
+        FeedbackGet:
+          Type: Api
+          Properties:
+            Path: /api/feedback/
+            Method: OPTIONS
+            RestApiId: !Ref ApiDeployment
+      Tags:
+        Environment: !Ref Environment
+        Function: "FeedbackFunction-RestApi"
+      Tracing: Active
+    Metadata:
+      Dockerfile: feedback.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: FeedbackFunctionLogGroup
+
+  EmbeddingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-EmbeddingFunctionLogGroup'
+      RetentionInDays: 14  
+
+  EmbeddingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+      - x86_64
+      Role: !Ref LambdaExecutionRole
+      Events:
+        EmbeddingPost:
+          Type: Api
+          Properties:
+            Path: /api/emb/
+            Method: POST
+            RestApiId: !Ref ApiDeployment
+        EmbeddingOptions:
+          Type: Api
+          Properties:
+            Path: /api/emb/
+            Method: OPTIONS
+            RestApiId: !Ref ApiDeployment
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-EmbeddingFunctionLogGroup'
+      Tags:
+        Environment: !Ref Environment
+        Function: "EmbeddingFunction-RestApi"
+      Tracing: Active
+    Metadata:
+      Dockerfile: embedding.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: EmbeddingFunctionLogGroup
+
+  WriteToDBFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-WriteToDBFunction'
+      RetentionInDays: 14  
+
+  WriteToDBFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+      - x86_64
+      Role: !Ref LambdaExecutionRole
+      Events:
+        WriteToDBPost:
+          Type: Api
+          Properties:
+            Path: /write_to_db
+            Method: POST
+            RestApiId: !Ref ApiDeployment
+      Tags:
+        Environment: !Ref Environment
+        Function: "WritetoDBfunction-RestApi"
+      Tracing: Active
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-WriteToDBFunction'
+    Metadata:
+      Dockerfile: write_to_db.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: WriteToDBFunctionLogGroup
+
+  AddErrorDetailsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-AddErrorDetailsFunction'
+      RetentionInDays: 14  
+
+  AddErrorDetailsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+      - x86_64
+      Role: !Ref LambdaExecutionRole
+      Events:
+        AddErrorDetailsPost:
+          Type: Api
+          Properties:
+            Path: /add-error-details
+            Method: POST
+            RestApiId: !Ref ApiDeployment
+      Tags:
+        Environment: !Ref Environment
+        Function: "AddErrordetailsfunction-RestApi"
+      Tracing: Active
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-AddErrorDetailsFunction'
+    Metadata:
+      Dockerfile: add-error-details.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: AddErrorDetailsLogGroup
+
+  EvaluationFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-EvaluationFunctionLogGroup'
+      RetentionInDays: 14  
+
+  EvaluationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !Ref LambdaExecutionRole
+      PackageType: Image
+      Architectures:
+      - x86_64
+      Events:
+        EvaluationGet:
+          Type: Api
+          Properties:
+            Path: /evaluate
+            Method: GET
+            RestApiId: !Ref ApiDeployment
+        EvaluationOptions:
+          Type: Api
+          Properties:
+            Path: /evaluate
+            Method: OPTIONS
+            RestApiId: !Ref ApiDeployment
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-EvaluationFunctionLogGroup'
+      Tags:
+        Environment: !Ref Environment
+        Function: "EvaluationFunction-RestApi"
+      Tracing: Active
+    Metadata:
+      Dockerfile: evaluation.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: EvaluationFunctionLogGroup
+
+  MetricSchedulerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-MetricSchedulerLogGroup'
+      RetentionInDays: 14  
+
+  MetricScheduler:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+      - x86_64
+      Role: !Ref LambdaExecutionRole
+      Events:
+        ScheduledEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 12 * * ? *)
+      Environment:
+        Variables:
+          LOG_GROUP_NAME: !Sub '/aws/lambda/${Stack}-${Environment}-MetricSchedulerLogGroup'
+    Metadata:
+      Dockerfile: metric.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: MetricSchedulerLogGroup
+
+  PresignedUrlFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-PresignedUrlFunction'
+      RetentionInDays: 14
+
+  PresignedUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !Ref LambdaExecutionRole
+      PackageType: Image
+      Architectures:
+        - x86_64
+      Events:
+        PresignedUrlPost:
+          Type: Api
+          Properties:
+            Path: /pre_signed_url
+            Method: POST
+            RestApiId: !Ref ApiDeployment
+        PresignedUrlOptions:
+          Type: Api
+          Properties:
+            Path: /pre_signed_url
+            Method: OPTIONS
+            RestApiId: !Ref ApiDeployment
+      Tags:
+        Environment: !Ref Environment
+        Function: "PresignedUrlFunction-RestApi"
+      Tracing: Active
+    Metadata:
+      Dockerfile: pre_signed_url.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: PresignedUrlFunctionLogGroup
+
+  NotifyFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Stack}-${Environment}-NotifyFunction'
+      RetentionInDays: 14
+
+  NotifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !Ref LambdaExecutionRole
+      PackageType: Image
+      Architectures:
+        - x86_64
+      Events:
+        NotifyPost:
+          Type: Api
+          Properties:
+            Path: /notify
+            Method: POST
+            RestApiId: !Ref ApiDeployment
+        NotifyOptions:
+          Type: Api
+          Properties:
+            Path: /notify
+            Method: OPTIONS
+            RestApiId: !Ref ApiDeployment
+      Tags:
+        Environment: !Ref Environment
+        Function: "NotifyFunction-RestApi"
+      Tracing: Active
+    Metadata:
+      Dockerfile: notify.Dockerfile
+      DockerContext: apis/
+      DockerTag: python3.10-v1
+    DependsOn: NotifyFunctionLogGroup
+
+Outputs:
+  EmbeddingFunctionUrl:
+    Description: "API Gateway endpoint URL for Settings function"
+    Value: !Sub "https://${ApiDeployment}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/api/emb/"
+  WriteToDBFunctionUrl:
+    Description: "API Gateway endpoint URL for WriteToDB function"
+    Value: !Sub "https://${ApiDeployment}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/write_to_db"
+  AddErrorDetailsFunctionUrl:
+    Description: "API Gateway endpoint URL for AddErrorDetails function"
+    Value: !Sub "https://${ApiDeployment}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/add-error-details"
+  LoginFunctionUrl:
+    Description: "API Gateway endpoint URL for Login function"
+    Value: !Sub "https://${ApiDeployment}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/login"
+  EvaluationFunctionUrl:
+    Description: "API Gateway endpoint URL for Evaluation function"
+    Value: !Sub "https://${ApiDeployment}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/evaluate"
+  SocketApiFunction:
+    Description: Socket API Lambda Function ARN
+    Value: !GetAtt SocketApiFunction.Arn
+  WebSocketApiEndpoint:
+    Description: WebSocket API Endpoint URL
+    Value: !Sub wss://${SocketApi}.execute-api.${AWS::Region}.amazonaws.com/Prod
