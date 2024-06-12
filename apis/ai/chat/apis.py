@@ -1,6 +1,6 @@
 import requests
 from ai.common.constants import API_URL
-from common.envs import get_secret_value_from_secret_manager
+from common.envs import get_secret_value_from_secret_manager, logger
 
 HEADERS = {
     "Origin": get_secret_value_from_secret_manager("CORS_ORIGIN").split(";")[0],
@@ -15,8 +15,9 @@ def call_add_error_details_api(user_input, error):
     """
     user_id = 1
     error_type, error_details = error
+    logger.info(f"Error Type: {error_type}, Error Details: {error_details}")
     requests.post(
-        f"{API_URL}/add-error-details",
+        f"{API_URL}add-error-details",
         headers=HEADERS,
         json={
             "user_input": user_input,
@@ -38,4 +39,4 @@ def call_write_to_db_api(record, user_id=1):
         json={"record": record, "user_id": user_id},
         headers=HEADERS,
     )
-    return response.json()["id"]
+    return response.json()

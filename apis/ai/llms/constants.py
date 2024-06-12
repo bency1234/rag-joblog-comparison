@@ -25,10 +25,10 @@ class OpenAITextLLM(Enum):
 
 class OpenAIChatLLM(Enum):
     TURBO = ("gpt-3.5-turbo", 0.0015, 0.002)
-    TURBO_16k = ("gpt-3.5-turbo-16k", 0.003, 0.004)
     GPT4_8K = ("gpt-4", 0.03, 0.06)
     GPT4_32k = ("gpt-4-32k", 0.06, 0.12)
     GPT4_TURBO = ("gpt-4-turbo-preview", 0.01, 0.03)
+    GPT_4o = ("gpt-4o", 0.005, 0.015)
 
 
 COST_PER_TOKENS = 1000
@@ -37,6 +37,7 @@ TEMPERATURE = 0
 TOKENS = 400
 TAG_TOKENS = 100
 TYPE_TOKENS = 50
+TEMPERATURE, TOKENS = 0, 1000
 
 # Embeddings
 CHUNK_SIZE_LIMIT = 2000
@@ -48,7 +49,7 @@ UNITS = 1000
 
 
 #################################  LLM Constants starts here #################################
-SYSTEM_MODEL, SYSTEM_INPUT_COST, SYSTEM_OUTPUT_COST = OpenAIChatLLM.GPT4_TURBO.value
+SYSTEM_MODEL, SYSTEM_INPUT_COST, SYSTEM_OUTPUT_COST = OpenAIChatLLM.GPT_4o.value
 #################################  LLM Constants ends here #################################
 
 #################################  Embeddings Constants starts here #################################
@@ -58,7 +59,7 @@ EMBEDDINGS_FUNCTION = OpenAIEmbeddings(
 )
 
 
-COLLECTION_NAME = "openai_embeddings"
+COLLECTION_NAME = "joblog"
 SCORE_THRESHOLD = 0.3
 NUMBER_OF_DOCUMENTS_TO_BE_RETURNED = 4
 SEARCH_KWARGS = {
@@ -66,4 +67,13 @@ SEARCH_KWARGS = {
     "k": NUMBER_OF_DOCUMENTS_TO_BE_RETURNED,
 }
 SEARCH_TYPE = "similarity_score_threshold"
+NEW_COLLECTION_NAME = "joblog_"
+
 #################################  Embeddings Constants ends here #################################
+# Define CONTENT_TYPES dictionary
+CONTENT_TYPES = {
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "md": "text/markdown",
+    # Add more file types if needed
+}

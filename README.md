@@ -1,8 +1,7 @@
-# rag-base-ai
+# Joblog-ai
 
 This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
 
-- hello_world - Code for the application's Lambda function and Project Dockerfile.
 - events - Invocation events that you can use to invoke the function.
 - tests - Unit tests for the application code. 
 - template.yaml - A template that defines the application's AWS resources.
@@ -14,17 +13,11 @@ The application uses several AWS resources, including Lambda functions and an AP
 
 Environment | Dev | Demo |
 --- | --- | --- | 
-Quality gate | [![Quality gate](http://122.168.196.5:9000/api/project_badges/quality_gate?project=rag-base-ai-dev)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev)| [![Quality gate](http://122.168.196.5:9000/api/project_badges/quality_gate?project=rag-base-ai)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
-Bugs | [![Bugs](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai-dev&metric=bugs)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev)| [![Bugs](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai&metric=bugs)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
-Code Smells | [![Code Smells](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai-dev&metric=code_smells)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev)| [![Code Smells](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai&metric=code_smells)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
-Coverage | [![Coverage](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai-dev&metric=coverage)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev)| [![Coverage](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai&metric=coverage)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
-Duplicated Lines (%) | [![Duplicated Lines (%)](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai-dev&metric=duplicated_lines_density)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev) | [![Duplicated Lines (%)](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai&metric=duplicated_lines_density)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
-Maintainability Rating | [![Maintainability Rating](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai-dev&metric=sqale_rating)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev) | [![Maintainability Rating](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai&metric=sqale_rating)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
-Lines of Code | [![Lines of Code](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai-dev&metric=ncloc)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev)| [![Lines of Code](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai&metric=ncloc)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
-Reliability Rating | [![Reliability Rating](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai-dev&metric=reliability_rating)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev) | [![Reliability Rating](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai&metric=reliability_rating)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
-Security Rating | [![Security Rating](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai-dev&metric=security_rating)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev) | [![Security Rating](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai&metric=security_rating)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
-Technical Debt | [![Technical Debt](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai-dev&metric=sqale_index)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev)| [![Technical Debt](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai&metric=sqale_index)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
-Vulnerabilities | [![Vulnerabilities](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai-dev&metric=vulnerabilities)](http://122.168.196.5:9000/dashboard?id=rag-base-ai-dev)| [![Vulnerabilities](http://122.168.196.5:9000/api/project_badges/measure?project=rag-base-ai&metric=vulnerabilities)](http://122.168.196.5:9000/dashboard?id=rag-base-ai) |
+Joblog | [![Joblog] - (https://sonarqube.bitcotapps.com/dashboard?id=joblog.ai)] (https://sonarqube.bitcotapps.com/dashboard?id=joblog.ai)
+
+Joblog --dev | [![Joblog --dev]- (https://sonarqube.bitcotapps.com/dashboard?id=joblog.ai--dev)] (https://sonarqube.bitcotapps.com/dashboard?id=joblog.ai--dev)
+
+
 
 ## Table of Contents
 - [Code Formatting and Linting Guidelines](#code-Formatting-and-Linting-Guidelines)
@@ -108,24 +101,18 @@ You can find your API Gateway Endpoint URL in the output values displayed after 
 Build your application with the `sam build` command.
 
 ```bash
-rag-base-ai$ sam build
+joblog.ai$ sam build
 ```
-
-The SAM CLI builds a docker image from a Dockerfile and then installs dependencies defined in `hello_world/requirements.txt` inside the docker image. The processed template file is saved in the `.aws-sam/build` folder.
 
 Test a single function by invoking it directly with a test event. An event is a JSON document that represents the input that the function receives from the event source. Test events are included in the `events` folder in this project.
 
 Run functions locally and invoke them with the `sam local invoke` command.
 
-```bash
-rag-base-ai$ sam local invoke HelloWorldFunction --event events/event.json
-```
-
 The SAM CLI can also emulate your application's API. Use the `sam local start-api` to run the API locally on port 3000.
 
 ```bash
-rag-base-ai$ sam local start-api
-rag-base-ai$ curl http://localhost:3000/
+joblog.ai$ sam local start-api
+jobllog.ai$ curl http://localhost:3000/
 ```
 
 The SAM CLI reads the application template to determine the API's routes and the functions that they invoke. The `Events` property on each function's definition includes the route and method for each path.
@@ -148,27 +135,23 @@ To simplify troubleshooting, SAM CLI has a command called `sam logs`. `sam logs`
 
 `NOTE`: This command works for all AWS Lambda functions; not just the ones you deploy using SAM.
 
-```bash
-rag-base-ai$ sam logs -n HelloWorldFunction --stack-name "rag-base-ai" --tail
-```
 
 You can find more information and examples about filtering Lambda function logs in the [SAM CLI Documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-logging.html).
 
-## Unit tests
 
-Tests are defined in the `tests` folder in this project. Use PIP to install the [pytest](https://docs.pytest.org/en/latest/) and run unit tests from your local machine.
+### Automation-test
+
+To run automation for chat interface that takes all the user input from an excel and runs a automation and get the response and stores them
 
 ```bash
-rag-base-ai$ pip install pytest pytest-mock --user
-rag-base-ai$ python -m pytest tests/ -v
+joblog.ai$ python3 scripts/automation.py
 ```
-
 ## Cleanup
 
 To delete the sample application that you created, use the AWS CLI. Assuming you used your project name for the stack name, you can run the following:
 
 ```bash
-sam delete --stack-name "rag-base-ai"
+sam delete --stack-name "joblog.ai"
 ```
 
 ## Resources

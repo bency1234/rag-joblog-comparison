@@ -19,6 +19,7 @@ class ChatbotData(db.Model):
     exchange_cost = db.Column(db.Numeric(5, 3))
     is_evaluated = db.Column(db.Boolean, default=False)
     time_stamp = db.Column(db.DateTime())
+    use_rag = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=func.now())
     updated_at = db.Column(db.DateTime, default=func.now(), onupdate=func.now())
 
@@ -91,3 +92,29 @@ class EvaluationScores(db.Model):
     context_utilization = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=db.func.now())
     updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+
+
+class ChatbotMetrics(db.Model):
+    __tablename__ = "chatbot_metrics"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey(user_id))
+    exchange_count = db.Column(db.Integer)
+    exchange_ids = db.Column(db.Text())
+    response_accepted_count = db.Column(db.Integer)
+    response_declined_count = db.Column(db.Integer)
+    response_time = db.Column(db.SmallInteger)
+    exchange_cost = db.Column(db.Numeric(5, 3))
+    time_stamp = db.Column(db.DateTime())
+    created_at = db.Column(db.DateTime, default=func.now())
+    updated_at = db.Column(db.DateTime, default=func.now(), onupdate=func.now())
+
+
+class Conversation(db.Model):
+    __tablename__ = "conversation"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer())
+    uuid = db.Column(db.Text, unique=True, nullable=True)
+    collection_name = db.Column(db.Text())
+    time_stamp = db.Column(db.DateTime())
+    created_at = db.Column(db.DateTime, default=func.now())
+    updated_at = db.Column(db.DateTime, default=func.now(), onupdate=func.now())

@@ -7,4 +7,3 @@ boto3==1.28.61
 setuptools==69.2.0
 datasets==2.18.0
 ragas==0.1.5
-openpyxl==3.1.2

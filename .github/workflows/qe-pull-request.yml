@@ -19,7 +19,7 @@ on:
 jobs:
   quality-engineering:
     name: QE
-    uses: bitcot/aiqa/.github/workflows/quality-engineering.yml@v0.0.9
+    uses: bitcot/aiqa/.github/workflows/quality-engineering.yml@v1.0.0
     with:
       danger: true
       nodeLint: false
