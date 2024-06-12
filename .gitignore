@@ -249,4 +249,10 @@ node_modules/
 # AWS SAM
 .aws-sam/
 
+<<<<<<< HEAD
+=======
+# Ignore xlsx file
+*.xlsx
+
+>>>>>>> origin/feature-dev
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode

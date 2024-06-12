@@ -1,6 +1,6 @@
 import os
 
-from ai.prompts.system_prompt import SYSTEM_PROMPT
+from ai.prompts.system_prompt import TOGGLE_OFF_SYSTEM_PROMPT, TOGGLE_ON_SYSTEM_PROMPT
 from common.chatbot import SystemPrompt
 from common.db import db
 from common.envs import logger
@@ -19,7 +19,14 @@ class SystemPromptSeeder:
     """
 
     prompt_data = {
-        "System prompt": {"content": SYSTEM_PROMPT, "type": "System Prompt"},
+        "TOGGLE_ON_SYSTEM_PROMPT": {
+            "content": TOGGLE_ON_SYSTEM_PROMPT,
+            "type": "System Prompt",
+        },
+        "TOGGLE_OFF_SYSTEM_PROMPT": {
+            "content": TOGGLE_OFF_SYSTEM_PROMPT,
+            "type": "System Prompt",
+        },
     }
 
     @classmethod
@@ -64,7 +71,7 @@ if __name__ == "__main__":
     app = create_app()
 
     with app.app_context():
-        upgrade()
+        # upgrade()
         seeder = FlaskSeeder()
         seeder.init_app(app, db)
 

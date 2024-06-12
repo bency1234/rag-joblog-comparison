@@ -9,15 +9,15 @@ COPY ai/requirements.txt ./ai_requirements.txt
 RUN python3.10 -m pip install -r common_requirements.txt -t .
 RUN python3.10 -m pip install -r ai_requirements.txt -t .
 
-RUN python3.10 -m pip install antiword
-
 # Copy all Python files from the settings directory to the container
 # Ensure that the settings directory is at the same level as this Dockerfile
-COPY embedding/*.py ./
+COPY notify/*.py ./
 
 # Copy common folder to the container
 COPY common ./common
 COPY ai ./ai
+COPY notify ./notify
+
 
 # The default command that will be executed when the Lambda function is invoked
 # Command can be overwritten by providing a different command in the template directly.

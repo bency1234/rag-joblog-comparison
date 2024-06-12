@@ -64,6 +64,7 @@ def login(*args):
             }, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-def lambda_handler(event, context):
+def lambda_handler(*args):
+    event = args[0]
     logger.info("Calling Login Function")
     return call_fn(login, event)

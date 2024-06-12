@@ -40,11 +40,9 @@ def add_error_details_in_db(event, db):
             error_type = data.get("error_type")
             error_details = data.get("error_details")
             user_id = data.get("user_id")
-
             # Validate inputs before processing
             if not (
-                is_valid_input(user_input)
-                and is_valid_input(error_type)
+                is_valid_input(error_type)
                 and is_valid_input(error_details)
                 and is_valid_user_id(user_id)
             ):
@@ -59,7 +57,7 @@ def add_error_details_in_db(event, db):
                 error_type=error_type,
                 user_id=user_id,
             )
-
+            logger.info(f"error details: {error_details}")
             db.session.add(chatbot_response)
             db.session.commit()
 
@@ -76,5 +74,6 @@ def add_error_details_in_db(event, db):
             }, HTTPStatus.INTERNAL_SERVER_ERROR.value
 
 
-def lambda_handler(event, context):
+def lambda_handler(*args):
+    event = args[0]
     return call_fn(add_error_details_in_db, event)
